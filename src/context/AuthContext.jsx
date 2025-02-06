@@ -1,45 +1,64 @@
 
 import React, { createContext, useState, useEffect } from 'react';
-import jwtDecode from 'jwt-decode';
+import axios from 'axios';
+import jwt_decode from 'jwt-decode';
 
 export const AuthContext = createContext();
 
-function AuthContextProvider({ children }) {
+export function AuthContextProvider({ children }) {
     const [user, setUser] = useState(null);
-    const [token, setToken] = useState(null);
+    const [token, setToken] = useState(localStorage.getItem("jwtToken"));
 
 
     function decodeToken(token) {
         try {
-            return jwtDecode(token);
+            return jwt_decode(token);
         } catch (error) {
             console.error("Ongeldig token:", error);
             return null;
         }
     }
 
-    function login(tokenFromServer) {
-        localStorage.setItem('authToken', tokenFromServer);
-        const decoded = decodeToken(tokenFromServer);
-        setToken(tokenFromServer);
-        setUser(decoded);
+
+    async function login(username, password) {
+        try {
+            const response = await axios.post(
+                "https://api.datavortex.nl/users/authenticate",
+                { username, password },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Api-Key': 'kalenderapp:0m01WGvb06SMv1D1T658'
+                    }
+                }
+            );
+
+
+            const jwtToken = response.data.token;
+            localStorage.setItem("jwtToken", jwtToken);
+            setToken(jwtToken);
+            const decodedUser = decodeToken(jwtToken);
+            setUser(decodedUser);
+        } catch (error) {
+            console.error("Inloggen mislukt:", error);
+            throw error;
+        }
     }
 
+
     function logout() {
-        localStorage.removeItem('authToken');
+        localStorage.removeItem("jwtToken");
         setToken(null);
         setUser(null);
     }
 
 
     useEffect(() => {
-        const tokenFromStorage = localStorage.getItem('authToken');
-        if (tokenFromStorage) {
-            const decoded = decodeToken(tokenFromStorage);
-            setToken(tokenFromStorage);
+        if (token) {
+            const decoded = decodeToken(token);
             setUser(decoded);
         }
-    }, []);
+    }, [token]);
 
     return (
         <AuthContext.Provider value={{ user, token, login, logout }}>
@@ -47,5 +66,3 @@ function AuthContextProvider({ children }) {
         </AuthContext.Provider>
     );
 }
-
-export default AuthContextProvider;

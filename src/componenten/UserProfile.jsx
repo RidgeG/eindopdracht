@@ -1,4 +1,4 @@
-// src/components/UserProfile.jsx
+
 import React, { useState } from 'react';
 
 function UserProfile({ user, onUpdate }) {
