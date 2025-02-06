@@ -8,7 +8,6 @@ import InputField from '../../componenten/InputField.jsx';
 function Register() {
     const { login } = useContext(AuthContext);
     const navigate = useNavigate();
-
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [email, setEmail] = useState('');

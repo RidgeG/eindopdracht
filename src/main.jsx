@@ -9,12 +9,12 @@ import ThemeContextProvider from './context/ThemeContext.jsx';
 
 createRoot(document.getElementById('root')).render(
     <StrictMode>
-        <Router>
-            <AuthContextProvider>
-                <ThemeContextProvider>
+        <AuthContextProvider>
+            <ThemeContextProvider>
+                <Router>
                     <App />
-                </ThemeContextProvider>
-            </AuthContextProvider>
-        </Router>
+                </Router>
+            </ThemeContextProvider>
+        </AuthContextProvider>
     </StrictMode>
 );

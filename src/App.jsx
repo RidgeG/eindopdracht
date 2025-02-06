@@ -18,7 +18,7 @@ import Footer from "./componenten/Footer.jsx";
 function App() {
     const navigate = useNavigate();
     const { theme, toggleTheme } = useContext(ThemeContext);
-    const { user, logout } = useContext(AuthContext);
+    const { logout } = useContext(AuthContext);
 
     function handleLogout() {
         logout();
@@ -27,7 +27,7 @@ function App() {
 
     return (
         <div className={`app ${theme}`}>
-            <Header navigate={navigate} toggleTheme={toggleTheme} />
+            <Header toggleTheme={toggleTheme} />
             <main>
                 <Routes>
                     <Route path="/login" element={<Login />} />
