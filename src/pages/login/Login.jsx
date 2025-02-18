@@ -1,7 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext.jsx';
 import { useNavigate } from 'react-router-dom';
-import axios from "axios";
 import InputField from "../../componenten/InputField.jsx";
 
 function Login() {

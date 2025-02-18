@@ -1,14 +1,17 @@
 import React, {useEffect, useState} from "react";
 import axios from "axios";
-
-
-const CRONOFY_ACCESS_TOKEN = "je_access_token";
-const CRONOFY_CALENDAR_ID = "je_calendar_id";
+import { CRONOFY_CONFIG} from "../../config.js";
+import CalculateDate from "../../componenten/calculateDate.jsx";
 
 async function fetchCalendarEvents(setTasks) {
     try {
-        const response = await axios.get(`https://api.cronofy.com/v1/events`, {
-            headers: { Authorization: `Bearer ${CRONOFY_ACCESS_TOKEN}` }
+        const accessToken = localStorage.getItem("cronofy_access_token");
+        if (!accessToken) {
+            console.error("Geen Cronofy access token gevonden.");
+            return;
+        }
+        const response = await axios.get(`${CRONOFY_CONFIG.API_HOST}/v1/events`, {
+            headers: { Authorization: `Bearer ${accessToken}` }
         });
         setTasks(response.data.events);
     } catch (error) {
@@ -23,14 +26,14 @@ function Home() {
         fetchCalendarEvents(setTasks);
     }, []);
 
-
-
     return (
-        <div>
+        <div className="page-container">
             <h2>Weekoverzicht</h2>
-            <ul>
+            <ul className="task-list">
                 {tasks.map(task => (
-                    <li key={task.event_id}>{task.summary} - {task.start}</li>
+                    <li key={task.event_id}>
+                        {task.summary} - <CalculateDate date={task.start} />
+                    </li>
                 ))}
             </ul>
         </div>

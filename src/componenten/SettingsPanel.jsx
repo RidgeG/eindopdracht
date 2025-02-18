@@ -3,7 +3,6 @@ import React from 'react';
 function SettingsPanel({settings, onChange}) {
     return (
         <div className="settings-panel">
-            <h3>Instellingen</h3>
             <label>
                 Kalender synchroniseren:
                 <input

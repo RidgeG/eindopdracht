@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 
 function UserProfile({ user, onUpdate }) {
@@ -8,7 +7,6 @@ function UserProfile({ user, onUpdate }) {
     function handleImageChange(e) {
         const file = e.target.files[0];
         if (file) {
-
             const reader = new FileReader();
             reader.onloadend = () => {
                 setPreview(reader.result);
@@ -18,31 +16,24 @@ function UserProfile({ user, onUpdate }) {
         }
     }
 
-
     function handleSave() {
-
-        onUpdate({ ...user, profileImage: profileImage });
+        onUpdate({ ...user, profileImage });
     }
 
     return (
         <div className="user-profile">
             <h3>Welkom, {user.name || "Onbekend"}</h3>
             <p>Email: {user.email || "Onbekend"}</p>
-            <div>
+            <div className="user-photo">
                 <p>Profielfoto:</p>
                 {preview ? (
-                    <img
-                        src={preview}
-                        alt="Profielfoto"
-                        style={{ width: '100px', height: '100px', borderRadius: '50%' }}
-                    />
+                    <img src={preview} alt="Profielfoto" className="profile-img" />
                 ) : (
                     <p>Geen profielfoto</p>
                 )}
-                {}
                 <input type="file" accept="image/*" onChange={handleImageChange} />
             </div>
-            <button onClick={handleSave}>Profiel bijwerken</button>
+            <button className="btn" onClick={handleSave}>Profiel bijwerken</button>
         </div>
     );
 }

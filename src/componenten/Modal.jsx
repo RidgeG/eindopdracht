@@ -6,7 +6,7 @@ function Modal({ isOpen, onClose, children }) {
     return (
         <div className="modal-backdrop" onClick={onClose}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                <button onClick={onClose}>Sluiten</button>
+                <button className='modal-close-btn' onClick={onClose}>Sluiten</button>
                 {children}
             </div>
         </div>

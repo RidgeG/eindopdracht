@@ -1,5 +1,6 @@
 import React, {useState, useEffect} from "react";
 import axios from "axios";
+import Calendar from "react-calendar";
 
 async function fetchAllTask(callback) {
     const TRELLO_API_KEY = "je_api_key";
@@ -25,6 +26,7 @@ function AllTasks() {
 return (
     <div>
         <h2>Maandkalender</h2>
+        <Calendar/>
         <ul>
             {tasks.map((task) => (
                 <li key={taks.id}>{taks.name}</li>

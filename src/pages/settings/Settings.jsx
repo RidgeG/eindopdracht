@@ -1,4 +1,4 @@
-import React {useState} from 'react';
+import React, {useState} from 'react';
 import SettingsPanel from "../../componenten/SettingsPanel.jsx";
 
 function Settings({onLogout}) {
@@ -21,9 +21,9 @@ function Settings({onLogout}) {
     return (
         <div>
             <h2>Instellingen</h2>
-            <SettingsPanel settings={settings} onChange={handleSettingsChange} />
-            <button onClick={handleSave}>Instellingen Opslaan</button>
-            <button onClick={onLogout}>Uitloggen</button>
+            <SettingsPanel settings={settings} onChange={handleSettingsChange}/>
+            <button className="settings-button" onClick={handleSave}>Instellingen Opslaan</button>
+            <button className="settings-button" onClick={onLogout}>Uitloggen</button>
         </div>
     );
 

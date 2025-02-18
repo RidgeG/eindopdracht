@@ -3,7 +3,7 @@ import axios from 'axios';
 import CalculateDate from '../../componenten/calculateDate.jsx';
 
 async function fetchUpcomingTask(callback) {
-    const TRELLO_API_KEY = "je_api_key";
+    const TRELLO_API_KEY = "https://api-uk.cronofy.com";
     const TRELLO_OAUTH_TOKEN = "je_oauth_token";
     const LIST_ID = "je_list_id";
     try {
@@ -24,7 +24,7 @@ function UpcomingTask() {
     }, []);
 
     return (
-        <div>
+        <div className="upcomingTask">
             <h2>Aankomende Taak</h2>
             {task ? (
                 <div>

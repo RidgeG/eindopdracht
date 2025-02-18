@@ -1,18 +1,17 @@
-
 import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ThemeContext } from '../context/ThemeContext.jsx';
 import { AuthContext } from '../context/AuthContext.jsx';
 
-function Header() {
+function Header({ toggleTheme }) {
     const navigate = useNavigate();
-    const { toggleTheme } = useContext(ThemeContext);
     const { user, logout } = useContext(AuthContext);
 
     return (
-        <header style={{ padding: '10px', backgroundColor: '#f0f0f0' }}>
-            <nav>
-                <ul style={{ display: 'flex', listStyle: 'none', gap: '10px' }}>
+        <header className="header">
+            <h1>ADHD Kalender</h1>
+            <nav className="nav">
+                <ul className="nav-list">
                     <li><button onClick={() => navigate('/')}>Home</button></li>
                     <li><button onClick={() => navigate('/newtask')}>Nieuwe Taak</button></li>
                     <li><button onClick={() => navigate('/overview')}>Overzicht</button></li>
@@ -31,7 +30,7 @@ function Header() {
                     )}
                 </ul>
             </nav>
-            <div style={{ marginTop: '10px' }}>
+            <div className="theme-toggle">
                 <button onClick={toggleTheme}>Toggle Thema</button>
             </div>
         </header>
