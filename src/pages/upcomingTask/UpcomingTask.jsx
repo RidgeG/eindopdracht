@@ -1,42 +1,44 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import CalculateDate from '../../componenten/calculateDate.jsx';
+import React, { useContext, useState, useEffect } from 'react';
+import BigCalendarComponent from '../../componenten/BigCalendarComponent';
+import { TodoistContext } from '../../context/TodoistContext';
 
-async function fetchUpcomingTask(callback) {
-    const TRELLO_API_KEY = "https://api-uk.cronofy.com";
-    const TRELLO_OAUTH_TOKEN = "je_oauth_token";
-    const LIST_ID = "je_list_id";
-    try {
-        const response = await axios.get(`https://api.trello.com/1/lists/${LIST_ID}/cards?key=${TRELLO_API_KEY}&token=${TRELLO_OAUTH_TOKEN}`);
-        const tasks = response.data;
-        const sortedTasks = tasks.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
-        callback(sortedTasks[0]);
-    } catch (error) {
-        console.error("Fout bij ophalen van aankomende taak:", error);
-    }
-}
-
-function UpcomingTask() {
-    const [task, setTask] = useState(null);
+const UpcomingTask = () => {
+    const { tasks, fetchTasks } = useContext(TodoistContext);
+    const [date, setDate] = useState(new Date());
 
     useEffect(() => {
-        fetchUpcomingTask(setTask);
-    }, []);
+        fetchTasks();
+    }, [fetchTasks]);
+
+    const now = new Date();
+    const oneWeekLater = new Date();
+    oneWeekLater.setDate(now.getDate() + 7);
+    const upcomingTasks = tasks.filter(task => {
+        if (task.due && task.due.datetime) {
+            const taskDate = new Date(task.due.datetime);
+            return taskDate >= now && taskDate <= oneWeekLater;
+        }
+        return false;
+    });
+
+    const events = upcomingTasks.map(task => ({
+        id: task.id,
+        title: task.content,
+        start: new Date(task.due.datetime),
+        end: new Date(task.due.datetime),
+    }));
 
     return (
-        <div className="upcomingTask">
-            <h2>Aankomende Taak</h2>
-            {task ? (
-                <div>
-                    <h3>{task.name}</h3>
-                    <p>Datum: <CalculateDate date={task.dueDate} /></p>
-                    <p>Beschrijving: {task.desc}</p>
-                </div>
-            ) : (
-                <p>Geen aankomende taak gevonden.</p>
-            )}
+        <div className="page-container">
+            <h2>Aankomende Taken (Weekoverzicht)</h2>
+            <BigCalendarComponent
+                view="week"
+                date={date}
+                events={events}
+                onNavigate={(newDate) => setDate(newDate)}
+            />
         </div>
     );
-}
+};
 
 export default UpcomingTask;

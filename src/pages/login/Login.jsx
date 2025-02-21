@@ -1,48 +1,47 @@
-import React, { useState, useContext } from 'react';
-import { AuthContext } from '../../context/AuthContext.jsx';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useContext } from "react";
+import { AuthContext } from "../../context/AuthContext.jsx";
+import { useNavigate } from "react-router-dom";
 import InputField from "../../componenten/InputField.jsx";
 
-function Login() {
+const Login = () => {
     const { login } = useContext(AuthContext);
     const navigate = useNavigate();
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
-    const [message, setMessage] = useState('');
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+    const [message, setMessage] = useState("");
 
-    const handleSubmit = async (e) => {
+    async function handleSubmit(e) {
         e.preventDefault();
-        try{
-        await login(username, password);
-        setMessage('Login succesvol');
-        navigate('/profile');
+        try {
+            await login(username, password);
+            setMessage("Login succesvol");
+            navigate("/profile");
         } catch (error) {
-        setMessage('Login mislukt.' + (error.response?.data?.message || error.message));
+            setMessage("Login mislukt: " + (error.response?.data?.message || error.message));
         }
     }
 
     return (
-        <div>
+        <div className="form-container">
             <h2>Inloggen</h2>
             <form onSubmit={handleSubmit}>
-                <InputField>
+                <InputField
                     type="text"
                     placeholder="Gebruikersnaam"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                </InputField>
-                <InputField>
+                />
+                <InputField
                     type="password"
                     placeholder="Wachtwoord"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                </InputField>
-
-                <button type="submit">Inloggen</button>
+                />
+                <button type="submit" className="btn">Inloggen</button>
             </form>
-            <p>{message}</p>
+            <p className="message">{message}</p>
         </div>
     );
-}
+};
 
 export default Login;

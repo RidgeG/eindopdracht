@@ -10,15 +10,24 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@doist/todoist-api-typescript": "^4.0.0-alpha.3",
+    "@fullcalendar/core": "^6.1.15",
+    "@fullcalendar/daygrid": "^6.1.15",
+    "@fullcalendar/interaction": "^6.1.15",
+    "@fullcalendar/react": "^6.1.15",
+    "@fullcalendar/timegrid": "^6.1.15",
     "axios": "^1.7.9",
     "cronofy": "^3.8.2",
+    "date-fns": "^4.1.0",
     "install": "^0.13.0",
     "jwt-decode": "^4.0.0",
     "npm": "^11.1.0",
     "react": "^18.3.1",
+    "react-big-calendar": "^1.17.1",
     "react-calendar": "^5.1.0",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.1.5",
+    "todoist": "^1.1.0",
     "trello": "^0.3.0"
   },
   "devDependencies": {

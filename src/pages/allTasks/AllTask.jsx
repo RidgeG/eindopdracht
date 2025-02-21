@@ -1,40 +1,38 @@
-import React, {useState, useEffect} from "react";
-import axios from "axios";
-import Calendar from "react-calendar";
+import React, { useContext, useState, useEffect } from 'react';
+import BigCalendarComponent from '../../componenten/BigCalendarComponent';
+import { TodoistContext } from '../../context/TodoistContext';
 
-async function fetchAllTask(callback) {
-    const TRELLO_API_KEY = "je_api_key";
-    const TRELLO_OAUTH_TOKEN = "je_oauth_token";
-    const LIST_ID = "je_list_id";
-
-    try{
-        const response = await axios.get(`https://api.trello.com/1/lists/${LIST_ID}/cards?key=${TRELLO_API_KEY}&token=${TRELLO_OAUTH_TOKEN}`);
-        callback(response.data);
-    } catch (error) {
-        console.error("Fout bij het ophalen van de taken", error);
-    }
-}
-
-function AllTasks() {
-    const [tasks, setTasks] = useState([]);
+const AllTask = () => {
+    const { tasks, fetchTasks } = useContext(TodoistContext);
+    const [date, setDate] = useState(new Date());
 
     useEffect(() => {
-        fetchAllTask(setTasks);
-    }, []);
+        fetchTasks();
+    }, [fetchTasks]);
 
+    const events = tasks.map(task => {
+        if (task.due && task.due.datetime) {
+            return {
+                id: task.id,
+                title: task.content,
+                start: new Date(task.due.datetime),
+                end: new Date(task.due.datetime),
+            };
+        }
+        return null;
+    }).filter(event => event !== null);
 
-return (
-    <div>
-        <h2>Maandkalender</h2>
-        <Calendar/>
-        <ul>
-            {tasks.map((task) => (
-                <li key={taks.id}>{taks.name}</li>
-            ))}
-        </ul>
-    </div>
-);
+    return (
+        <div className="page-container">
+            <h2>Maandoverzicht</h2>
+            <BigCalendarComponent
+                view="month"
+                date={date}
+                events={events}
+                onNavigate={(newDate) => setDate(newDate)}
+            />
+        </div>
+    );
+};
 
-}
-
-export default AllTasks;
+export default AllTask;

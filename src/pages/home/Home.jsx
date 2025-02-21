@@ -1,43 +1,38 @@
-import React, {useEffect, useState} from "react";
-import axios from "axios";
-import { CRONOFY_CONFIG} from "../../config.js";
-import CalculateDate from "../../componenten/calculateDate.jsx";
+import React, { useContext, useState, useEffect } from 'react';
+import BigCalendarComponent from '../../componenten/BigCalendarComponent';
+import { TodoistContext } from '../../context/TodoistContext';
 
-async function fetchCalendarEvents(setTasks) {
-    try {
-        const accessToken = localStorage.getItem("cronofy_access_token");
-        if (!accessToken) {
-            console.error("Geen Cronofy access token gevonden.");
-            return;
-        }
-        const response = await axios.get(`${CRONOFY_CONFIG.API_HOST}/v1/events`, {
-            headers: { Authorization: `Bearer ${accessToken}` }
-        });
-        setTasks(response.data.events);
-    } catch (error) {
-        console.error("Fout bij ophalen van evenementen:", error);
-    }
-}
-
-function Home() {
-    const [tasks, setTasks] = useState([]);
+const Home = () => {
+    const { tasks, fetchTasks } = useContext(TodoistContext);
+    const [date, setDate] = useState(new Date());
 
     useEffect(() => {
-        fetchCalendarEvents(setTasks);
-    }, []);
+        fetchTasks();
+    }, [fetchTasks]);
+
+    const events = tasks.map(task => {
+        if (task.due && task.due.datetime) {
+            return {
+                id: task.id,
+                title: task.content,
+                start: new Date(task.due.datetime),
+                end: new Date(task.due.datetime),
+            };
+        }
+        return null;
+    }).filter(event => event !== null);
 
     return (
         <div className="page-container">
-            <h2>Weekoverzicht</h2>
-            <ul className="task-list">
-                {tasks.map(task => (
-                    <li key={task.event_id}>
-                        {task.summary} - <CalculateDate date={task.start} />
-                    </li>
-                ))}
-            </ul>
+            <h2>Vandaag</h2>
+            <BigCalendarComponent
+                view="day"
+                date={date}
+                events={events}
+                onNavigate={(newDate) => setDate(newDate)}
+            />
         </div>
     );
-}
+};
 
 export default Home;

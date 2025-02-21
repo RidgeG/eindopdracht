@@ -1,19 +1,26 @@
-// src/pages/NewTask.jsx
-import React, { useState, useContext } from 'react';
-import InputField from '../../componenten/InputField.jsx';
-import { TrelloContext } from '../../context/TrelloContext.jsx';
+import React, { useState, useContext } from "react";
+import { TodoistContext } from "../../context/TodoistContext.jsx";
+import InputField from "../../componenten/InputField.jsx";
 
-function NewTask() {
-    const [taskName, setTaskName] = useState('');
-    const [message, setMessage] = useState('');
-    const { createCard } = useContext(TrelloContext);
+const NewTask = () => {
+    const { createTask } = useContext(TodoistContext);
+    const [category, setCategory] = useState("boodschappenlijst");
+    const [name, setName] = useState("");
+    const [dateTime, setDateTime] = useState("");
+    const [frequency, setFrequency] = useState("niet herhalen");
+    const [message, setMessage] = useState("");
 
     async function handleAddTask() {
         try {
-            const card = await createCard(taskName);
-            setMessage(`Taak '${card.name}' toegevoegd!`);
-            setTaskName('');
+            const description = `Categorie: ${category}\nFrequentie: ${frequency}`;
+            const task = await createTask(name, dateTime, description);
+            setMessage(`Taak '${task.content}' toegevoegd!`);
+            setCategory("boodschappenlijst");
+            setName("");
+            setDateTime("");
+            setFrequency("niet herhalen");
         } catch (error) {
+            console.error("Fout bij toevoegen van taak:", error);
             setMessage("Fout bij toevoegen van taak.");
         }
     }
@@ -21,16 +28,49 @@ function NewTask() {
     return (
         <div className="page-container">
             <h2>Nieuwe Taak</h2>
-            <InputField
-                type="text"
-                placeholder="Taaknaam"
-                value={taskName}
-                onChange={(e) => setTaskName(e.target.value)}
-            />
-            <button className="btn" onClick={handleAddTask}>Toevoegen</button>
+            <div className="form-container new-task-form">
+                <label>
+                    Categorie:
+                    <select value={category} onChange={(e) => setCategory(e.target.value)}>
+                        <option value="boodschappenlijst">Boodschappenlijst</option>
+                        <option value="huishoudelijk">Huishoudelijk</option>
+                        <option value="werk">Werk</option>
+                        <option value="privé">Privé</option>
+                    </select>
+                </label>
+                <label>
+                    Naam:
+                    <InputField
+                        type="text"
+                        placeholder="Naam"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                    />
+                </label>
+                <label>
+                    Datum en Tijd:
+                    <input
+                        type="datetime-local"
+                        value={dateTime}
+                        onChange={(e) => setDateTime(e.target.value)}
+                    />
+                </label>
+                <label>
+                    Frequentie:
+                    <select value={frequency} onChange={(e) => setFrequency(e.target.value)}>
+                        <option value="niet herhalen">Niet herhalen</option>
+                        <option value="elke dag">Elke dag</option>
+                        <option value="om de dag">Om de dag</option>
+                        <option value="elke week">Elke week</option>
+                        <option value="om de week">Om de week</option>
+                        <option value="elke maand">Elke maand</option>
+                    </select>
+                </label>
+                <button className="btn" onClick={handleAddTask}>Taak Toevoegen</button>
+            </div>
             <p className="message">{message}</p>
         </div>
     );
-}
+};
 
 export default NewTask;
