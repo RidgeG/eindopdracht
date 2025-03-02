@@ -3,7 +3,6 @@ import axios from "axios";
 import {jwtDecode} from "jwt-decode";
 import { DATAVORTEX_CONFIG } from "../config";
 
-
 function isValidJWT(token) {
     return typeof token === "string" && token.split(".").length === 3;
 }
@@ -37,6 +36,7 @@ export const AuthProvider = ({ children }) => {
             }
             console.log("Inloggen met:", lowerUserName);
 
+
             const authResponse = await axios.post(
                 `https://api.datavortex.nl/${DATAVORTEX_CONFIG.APPLICATION_NAME}/users/authenticate`,
                 { username: lowerUserName, password },
@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }) => {
 
 
             const userResponse = await axios.get(
-                `https://api.datavortex.nl/${DATAVORTEX_CONFIG.APPLICATION_NAME}/users/${lowerUserName}`,
+                `https://api.datavortex.nl/${DATAVORTEX_CONFIG.APPLICATION_NAME}/users/${lowerUserName}/info`,
                 {
                     headers: {
                         "Content-Type": "application/json",
@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }) => {
             );
 
             setUser(userResponse.data);
-            console.log("Gebruikersgegevens opgehaald:", userResponse.data);
+            console.log("Gebruikersinformatie opgehaald:", userResponse.data);
         } catch (error) {
             console.error("Inloggen mislukt:", error);
             localStorage.removeItem("jwtToken");
@@ -80,9 +80,6 @@ export const AuthProvider = ({ children }) => {
 
     function logout() {
         localStorage.removeItem("jwtToken");
-        localStorage.removeItem("cronofy_access_token");
-        localStorage.removeItem("trello_access_token");
-        localStorage.removeItem("todoist_token");
         setToken(null);
         setUser(null);
     }

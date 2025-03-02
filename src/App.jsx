@@ -8,7 +8,6 @@ import UpcomingTask from './pages/upcomingTask/UpcomingTask.jsx';
 import Settings from './pages/settings/Settings.jsx';
 import Login from './pages/login/Login.jsx';
 import Register from './pages/register/Register.jsx';
-import OAuthCallback from './pages/oAuthCallback/OAuthCallback.jsx';
 import TodoistOAuth from './pages/todoistOAuth/TodoistOAuth.jsx';
 import TodoistOAuthCallback from './pages/todoistOAuthCallback/TodoistOAuthCallback.jsx';
 import ProtectedRoute from './componenten/ProtectedRoute.jsx';
@@ -35,7 +34,6 @@ function App() {
                 <Routes>
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
-                    <Route path="/oauth-callback" element={<OAuthCallback />} />
                     <Route path="/todoist" element={<TodoistOAuth />} />
                     <Route path="/todoist-oauth-callback" element={<TodoistOAuthCallback />} />
                     {/* Protected routes */}
@@ -52,4 +50,4 @@ function App() {
     );
 }
 
-export default App
+export default App;

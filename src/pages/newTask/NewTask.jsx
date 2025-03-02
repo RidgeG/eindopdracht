@@ -1,6 +1,6 @@
-import React, { useState, useContext } from "react";
-import { TodoistContext } from "../../context/TodoistContext.jsx";
-import InputField from "../../componenten/InputField.jsx";
+import React, { useState, useContext } from 'react';
+import { TodoistContext } from '../../context/TodoistContext.jsx';
+import InputField from '../../componenten/InputField.jsx';
 
 const NewTask = () => {
     const { createTask } = useContext(TodoistContext);
@@ -11,9 +11,19 @@ const NewTask = () => {
     const [message, setMessage] = useState("");
 
     async function handleAddTask() {
+        if (dateTime) {
+            const selectedDate = new Date(dateTime);
+            const now = new Date();
+            if (selectedDate < now) {
+                setMessage("Datum is verstreken. Kies een toekomstige datum.");
+                return;
+            }
+        }
+
         try {
             const description = `Categorie: ${category}\nFrequentie: ${frequency}`;
-            const task = await createTask(name, dateTime, description);
+            const isoDue = dateTime && dateTime.trim() !== "" ? new Date(dateTime).toISOString() : "";
+            const task = await createTask(name, isoDue, description);
             setMessage(`Taak '${task.content}' toegevoegd!`);
             setCategory("boodschappenlijst");
             setName("");

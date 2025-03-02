@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import SettingsPanel from "../../componenten/SettingsPanel.jsx";
+
 
 function Settings({ onLogout }) {
     const [settings, setSettings] = useState({
@@ -12,14 +12,7 @@ function Settings({ onLogout }) {
     const [message, setMessage] = useState("");
 
     const syncCalendar = async () => {
-        try {
-            // Hier roep je de Cronofy API aan via bijvoorbeeld een CronofyContext.
-            console.log("Synchronisatie gestart via Cronofy API...");
-            setMessage("Agenda succesvol gesynchroniseerd!");
-        } catch (error) {
-            console.error("Fout bij agenda synchronisatie:", error);
-            setMessage("Agenda synchronisatie mislukt.");
-        }
+        setMessage("Agenda synchronisatie wordt afgehandeld via Todoist.");
     };
 
     function handleSyncChange(e) {
