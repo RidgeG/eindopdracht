@@ -1,51 +1,56 @@
 import React, { useState, useEffect, useContext } from 'react';
-import BigCalendarComponent from '../../componenten/BigCalendarComponent.jsx';
+import BigCalendar from '../../componenten/BigCalendarComponent.jsx';
 import { TodoistContext } from '../../context/TodoistContext';
-import TaskDetailsModal from '../../componenten/TaskDetailsModal.jsx';
+import { AuthContext } from '../../context/AuthContext';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../../../firebaseConfig';
+import TaskDetailsModal from '../../componenten/TaskDetailsModal';
+import Loader from '../../componenten/Loader';
 
-const AllTask = () => {
+const AllTasks = () => {
     const [date, setDate] = useState(new Date());
-    const { tasks, fetchTasks } = useContext(TodoistContext);
+    const { tasks: todoistTasks, isLinked, fetchTasks } = useContext(TodoistContext);
+    const { user } = useContext(AuthContext);
+    const [localTasks, setLocalTasks] = useState([]);
+    const [selectedTask, setSelectedTask] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchTasks();
-    }, [fetchTasks]);
+        const loadTasks = async () => {
+            try {
+                if (isLinked) {
+                    await fetchTasks();
+                } else {
+                    const q = query(collection(db, 'localTasks'), where('userId', '==', user.uid));
+                    const snapshot = await getDocs(q);
+                    setLocalTasks(snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data(),
+                        due: { datetime: doc.data().dueDate }
+                    })));
+                }
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadTasks();
+    }, [isLinked, user.uid, fetchTasks]);
 
-    const safeTasks = Array.isArray(tasks) ? tasks : [];
-    const events = safeTasks.map(task => {
-        if (task.due && task.due.datetime) {
-            return {
-                id: task.id,
-                title: task.content,
-                start: new Date(task.due.datetime),
-                end: new Date(task.due.datetime),
-                description: task.description
-            };
-        }
-        return null;
-    }).filter(event => event !== null);
-
-    const [selectedTask, setSelectedTask] = useState(null);
-
-    const handleSelectEvent = (event) => {
-        setSelectedTask(event);
-    };
+    if (loading) return <Loader />;
 
     return (
         <div className="page-container">
-            <h2>Maandoverzicht</h2>
-            <BigCalendarComponent
-                view="month"
+            <h2>Alle Taken</h2>
+            <BigCalendar
+                events={isLinked ? todoistTasks : localTasks}
+                onSelectEvent={setSelectedTask}
                 date={date}
-                events={events}
-                onSelectEvent={handleSelectEvent}
-                onNavigate={(newDate) => setDate(newDate)}
+                onNavigate={setDate}
+                view="month"
             />
-            {selectedTask && (
-                <TaskDetailsModal task={selectedTask} onClose={() => setSelectedTask(null)} />
-            )}
+            {selectedTask && <TaskDetailsModal task={selectedTask} onClose={() => setSelectedTask(null)} />}
         </div>
     );
 };
 
-export default AllTask;
+export default AllTasks;

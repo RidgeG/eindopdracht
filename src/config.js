@@ -1,7 +1,3 @@
-export const DATAVORTEX_CONFIG = {
-    APPLICATION_NAME: import.meta.env.VITE_DATAVORTEX_APPLICATION_NAME || "kalenderapp",
-    API_KEY: import.meta.env.VITE_DATAVORTEX_API_KEY || "kalenderapp:0m01WGvb06SMv1D1T658"
-};
 
 export const TODOIST_CONFIG = {
     CLIENT_ID: import.meta.env.VITE_TODOIST_CLIENT_ID,

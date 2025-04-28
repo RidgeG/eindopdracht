@@ -1,9 +1,8 @@
-
-import React from 'react';
+import React from "react";
 
 function Footer() {
     return (
-        <footer className='Footer'>
+        <footer className="footer">
             <p>&copy; 2025 Kalender App. Alle rechten voorbehouden.</p>
         </footer>
     );

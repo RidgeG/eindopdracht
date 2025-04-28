@@ -1,20 +1,58 @@
+/* ===== index.css ===== */
+/* Reset en basisstijlen */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-body {
-  font-family: Arial, sans-serif;
+:root {
+  /* Light theme */
+  --color-primary: #4f46e5;
+  --color-primary-hover: #4338ca;
+  --color-text: #333;
+  --color-bg: #f8fafc;
+  --color-card-bg: rgba(255, 255, 255, 0.95);
+  --color-border: #e2e8f0;
+  --color-error: #dc2626;
+  --color-success: #16a34a;
+
+  /* Dark theme */
+  --dark-color-text: #f8fafc;
+  --dark-color-bg: #0f172a;
+  --dark-color-card-bg: #1e293b;
+  --dark-color-border: #334155;
 }
 
-/* Themas */
-body.light {
-  background: linear-gradient(90deg, rgba(47,40,166,1) 0%, rgba(95,179,158,1) 27%, rgba(136,198,172,1) 35%, rgba(0,212,255,1) 100%);
-  color: #000000;
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+  transition: background-color 0.3s, color 0.3s;
 }
 
 body.dark {
-  background-color: #1e1e1e;
-  color: #ffffff;
+  --color-text: var(--dark-color-text);
+  --color-bg: var(--dark-color-bg);
+  --color-card-bg: var(--dark-color-card-bg);
+  --color-border: var(--dark-color-border);
+}
+
+/* Basis elementen */
+button {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* Animaties */
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }

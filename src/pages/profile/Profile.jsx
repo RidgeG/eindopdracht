@@ -1,21 +1,18 @@
-import React, {useContext} from "react";
-import {AuthContext} from "../../context/AuthContext.jsx";
-import UserProfile from "../../componenten/UserProfile.jsx";
+import React, { useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AuthContext } from '../../context/AuthContext';
+import ProfilePage from '../../componenten/ProfilePage';
 
-function Profile () {
-    const {user} = useContext(AuthContext);
+const Profile = () => {
+    const { logout } = useContext(AuthContext);
+    const navigate = useNavigate();
 
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
+    };
 
-    return (
-        <div>
-            <h2>Profielpagina</h2>
-            {user ? (
-                <UserProfile user={user} onUpdate={(updatedUser) => console.log("Update:", updatedUser)}/>
-            ) : (
-                <p>Geen gebruikersinformatie beschikbaar.</p>
-            )}
-        </div>
-    );
-}
+    return <ProfilePage onLogout={handleLogout} />;
+};
 
 export default Profile;

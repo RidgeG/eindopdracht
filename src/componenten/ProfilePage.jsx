@@ -1,101 +1,89 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { DATAVORTEX_CONFIG } from "../config";
+import React, { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
+import { TodoistContext } from '../context/TodoistContext';
+import Loader from '../componenten/Loader';
 
-
-function UserProfile({ user, onUpdate }) {
-    const [userData, setUserData] = useState(user);
-    const [preview, setPreview] = useState(user.profileImage || "");
-    const [selectedFile, setSelectedFile] = useState(null);
-    const [uploadMessage, setUploadMessage] = useState("");
-
+const ProfilePage = ({ onLogout }) => {
+    const { user } = useContext(AuthContext);
+    const {
+        redirectToTodoistOAuth,
+        isLinked,
+        isLoading,
+        error,
+        fetchTasks
+    } = useContext(TodoistContext);
+    const [status, setStatus] = useState('');
 
     useEffect(() => {
-        if (userData && userData.username) {
-            const jwtToken = localStorage.getItem("jwt_token");
-            axios
-                .get(
-                    `https://api.datavortex.nl/kalenderapp/users/${username}`,
-                    {
-                        headers: {
-                            "Authorization": `Bearer ${jwtToken}`,
-                            "X-Api-Key": DATAVORTEX_CONFIG.API_KEY,
-                        },
-                    }
-                )
-                .then((res) => {
-                    setUserData(res.data);
-                })
-                .catch((err) => {
-                    console.error("Error fetching user data:", err);
-                });
-        }
-    }, [userData.username]);
+        const params = new URLSearchParams(window.location.search);
+        const success = params.get('success');
+        const error = params.get('error');
 
-    function handleFileChange(e) {
-        const file = e.target.files[0];
-        if (file) {
-            setSelectedFile(file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setPreview(reader.result);
-            };
-            reader.readAsDataURL(file);
-        }
-    }
-
-    async function handleUpload() {
-        if (!selectedFile) {
-            setUploadMessage("Selecteer eerst een foto.");
-            return;
-        }
-        try {
-            // Haal de JWT-token direct op bij de request
-            const jwtToken = localStorage.getItem("jwt_token");
-            const formData = new FormData();
-            formData.append("file", selectedFile);
-
-            const response = await axios.post(
-                `https://api.datavortex.nl/kalenderapp/users/${username}/upload`,
-                formData,
-                {
-                    headers: {
-                        "Content-Type": "multipart/form-data",
-                        "X-Api-Key": DATAVORTEX_CONFIG.API_KEY,
-                        "Authorization": `Bearer ${jwtToken}`,
-                    },
-                }
-            );
-
-            setUploadMessage("Foto succesvol geüpload!");
-            onUpdate({ ...userData, profileImage: preview });
-        } catch (error) {
-            console.error("Foto upload mislukt:", error.response?.data || error.message);
-            setUploadMessage("Foto upload mislukt.");
-        }
-    }
+        if (success) setStatus('Todoist succesvol gekoppeld! 🎉');
+        if (error) setStatus(`Fout: ${decodeURIComponent(error)}`);
+    }, []);
 
     return (
-        <div className="user-profile">
-            {preview ? (
-                <img src={preview} alt="Profielfoto" className="profile-img" />
-            ) : (
-                <p>Geen profielfoto</p>
+        <div className="page-container user-profile">
+            <h2>Profiel</h2>
+            {user && (
+                <div className="profile-content">
+                    <div className="user-info">
+                        <p><strong>E-mail:</strong> {user.email}</p>
+                        <p><strong>Laatste login:</strong> {new Date(user.metadata.lastLoginAt).toLocaleString()}</p>
+                    </div>
+
+                    <div className="sync-section">
+                        <h3>Agenda Synchronisatie</h3>
+
+                        {status && (
+                            <div className={`status-message ${status.includes('🎉') ? 'success' : 'error'}`}>
+                                {status}
+                            </div>
+                        )}
+
+                        {!isLinked ? (
+                            <button
+                                className={`btn sync-button ${isLoading ? 'loading' : ''}`}
+                                onClick={redirectToTodoistOAuth}
+                                disabled={isLoading}
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <Loader small />
+                                        <span>Bezig met verbinden...</span>
+                                    </>
+                                ) : (
+                                    'Verbind met Todoist'
+                                )}
+                            </button>
+                        ) : (
+                            <>
+                                <button
+                                    className="btn sync-button"
+                                    onClick={fetchTasks}
+                                >
+                                    Handmatig synchroniseren
+                                </button>
+                                <p className="sync-status">
+                                    Laatste synchronisatie: {new Date().toLocaleTimeString()}
+                                </p>
+                            </>
+                        )}
+
+                        {error && <p className="error-message">{error}</p>}
+                    </div>
+
+                    <button
+                        className="btn logout-button"
+                        onClick={onLogout}
+                    >
+                        Uitloggen
+                    </button>
+                </div>
             )}
-            <h3>Welkom, {userData.name || "Onbekend"}</h3>
-            <p>Email: {userData.email || "Onbekend"}</p>
-            <div className="user-photo">
-                <input type="file" accept="image/*" onChange={handleFileChange} />
-                <button className="btn" onClick={handleUpload}>
-                    Upload Foto
-                </button>
-                {uploadMessage && <p className="message">{uploadMessage}</p>}
-            </div>
-            <button className="btn" onClick={() => onUpdate({ ...userData, profileImage: preview })}>
-                Profiel bijwerken
-            </button>
         </div>
     );
-}
+};
 
-export default UserProfile;
+export default ProfilePage;

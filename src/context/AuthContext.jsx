@@ -1,101 +1,77 @@
-import { createContext, useState, useEffect } from "react";
-import axios from "axios";
-import {jwtDecode} from "jwt-decode";
-import { DATAVORTEX_CONFIG } from "../config";
-
-function isValidJWT(token) {
-    return typeof token === "string" && token.split(".").length === 3;
-}
+import React, { createContext, useState, useEffect, useRef } from "react";
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "../../firebaseConfig";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-    const [token, setToken] = useState(() => {
-        const stored = localStorage.getItem("jwtToken");
-        return isValidJWT(stored) ? stored : null;
-    });
     const [user, setUser] = useState(null);
+    const inactivityTimerRef = useRef(null);
 
-    function decodeToken(token) {
-        try {
-            if (!isValidJWT(token)) {
-                throw new Error("Token is not a valid JWT");
-            }
-            return jwtDecode(token);
-        } catch (error) {
-            console.error("Ongeldig token:", error);
-            return null;
-        }
-    }
-
-    async function login(username, password) {
-        try {
-            const lowerUserName = username.trim().toLowerCase();
-            if (!lowerUserName) {
-                throw new Error("Gebruikersnaam is leeg");
-            }
-            console.log("Inloggen met:", lowerUserName);
-
-
-            const authResponse = await axios.post(
-                `https://api.datavortex.nl/${DATAVORTEX_CONFIG.APPLICATION_NAME}/users/authenticate`,
-                { username: lowerUserName, password },
-                {
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-Api-Key": DATAVORTEX_CONFIG.API_KEY,
-                    },
+    // Automatic logout na 2 uur inactiviteit
+    const resetInactivityTimer = () => {
+        if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+        inactivityTimerRef.current = setTimeout(async () => {
+            try {
+                if (user) {
+                    await signOut(auth);
+                    setUser(null);
                 }
-            );
-
-            const jwtToken = authResponse.data.jwt;
-            if (!jwtToken || !isValidJWT(jwtToken)) {
-                throw new Error("Invalid token received");
+            } catch (error) {
+                console.error("Automatisch uitloggen mislukt:", error);
             }
-            localStorage.setItem("jwtToken", jwtToken);
-            setToken(jwtToken);
+        }, 7200000); // 2 uur in ms
+    };
 
-
-            const userResponse = await axios.get(
-                `https://api.datavortex.nl/${DATAVORTEX_CONFIG.APPLICATION_NAME}/users/${lowerUserName}/info`,
-                {
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-Api-Key": DATAVORTEX_CONFIG.API_KEY,
-                        Authorization: `Bearer ${jwtToken}`,
-                    },
-                }
-            );
-
-            setUser(userResponse.data);
-            console.log("Gebruikersinformatie opgehaald:", userResponse.data);
-        } catch (error) {
-            console.error("Inloggen mislukt:", error);
-            localStorage.removeItem("jwtToken");
-            setToken(null);
-            setUser(null);
-            throw error;
-        }
-    }
-
-    function logout() {
-        localStorage.removeItem("jwtToken");
-        setToken(null);
-        setUser(null);
-    }
-
+    // Voeg activity listeners toe
     useEffect(() => {
-        if (token) {
-            const decoded = decodeToken(token);
-            setUser(decoded);
+        if (!user) return;
+
+        const activities = ['mousemove', 'keydown', 'click'];
+        const resetTimer = () => resetInactivityTimer();
+
+        activities.forEach(event => window.addEventListener(event, resetTimer));
+        return () => activities.forEach(event => window.removeEventListener(event, resetTimer));
+    }, [user]);
+
+    // Auth state observer
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+            setUser(currentUser);
+            if (currentUser) resetInactivityTimer();
+        });
+        return unsubscribe;
+    }, []);
+
+    // Google Login handler
+    const login = async () => {
+        const provider = new GoogleAuthProvider();
+        try {
+            const result = await signInWithPopup(auth, provider);
+            setUser(result.user);
+            return { success: true };
+        } catch (error) {
+            console.error("Login error:", error);
+            return { success: false, message: error.message };
         }
-    }, [token]);
+    };
+
+    // Logout handler
+    const logout = async () => {
+        try {
+            await signOut(auth);
+            setUser(null);
+            return { success: true };
+        } catch (error) {
+            console.error("Logout error:", error);
+            return { success: false, message: error.message };
+        }
+    };
 
     return (
-        <AuthContext.Provider value={{ user, token, login, logout }}>
+        <AuthContext.Provider value={{ user, login, logout }}>
             {children}
         </AuthContext.Provider>
     );
 };
-
-export default AuthContext;

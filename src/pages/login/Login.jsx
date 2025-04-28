@@ -1,23 +1,24 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext,  } from "react";
 import { AuthContext } from "../../context/AuthContext.jsx";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import InputField from "../../componenten/InputField.jsx";
 
 const Login = () => {
     const { login } = useContext(AuthContext);
     const navigate = useNavigate();
-    const [username, setUsername] = useState("");
+    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [message, setMessage] = useState("");
 
     async function handleSubmit(e) {
         e.preventDefault();
         try {
-            await login(username, password);
+            await login(email, password);
             setMessage("Login succesvol");
-            navigate("/profile");
+            navigate("/home");
         } catch (error) {
-            setMessage("Login mislukt: " + (error.response?.data?.message || error.message));
+            console.error("Inloggen mislukt:", error);
+            setMessage("Inloggen mislukt: " + error.message);
         }
     }
 
@@ -26,10 +27,10 @@ const Login = () => {
             <h2>Inloggen</h2>
             <form onSubmit={handleSubmit}>
                 <InputField
-                    type="text"
-                    placeholder="Gebruikersnaam"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                 />
                 <InputField
                     type="password"
@@ -40,6 +41,7 @@ const Login = () => {
                 <button type="submit" className="btn">Inloggen</button>
             </form>
             <p className="message">{message}</p>
+            <p>Heb je nog geen account? <Link to="/register">Registreer hier</Link></p>
         </div>
     );
 };

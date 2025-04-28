@@ -1,84 +1,87 @@
 import React, { useState, useContext } from 'react';
-import { TodoistContext } from '../../context/TodoistContext.jsx';
-import InputField from '../../componenten/InputField.jsx';
+import { TodoistContext } from '../../context/TodoistContext';
+import { AuthContext } from '../../context/AuthContext';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../../../firebaseConfig';
+import InputField from '../../componenten/InputField';
+import { useNavigate } from 'react-router-dom';
+import Loader from '../../componenten/Loader';
 
 const NewTask = () => {
-    const { createTask } = useContext(TodoistContext);
-    const [category, setCategory] = useState("boodschappenlijst");
-    const [name, setName] = useState("");
-    const [dateTime, setDateTime] = useState("");
-    const [frequency, setFrequency] = useState("niet herhalen");
-    const [message, setMessage] = useState("");
+    const { createTask, isLinked, isLoading } = useContext(TodoistContext);
+    const { user } = useContext(AuthContext);
+    const [taskData, setTaskData] = useState({ title: '', dueDate: '', description: '' });
+    const [message, setMessage] = useState('');
+    const navigate = useNavigate();
 
-    async function handleAddTask() {
-        if (dateTime) {
-            const selectedDate = new Date(dateTime);
-            const now = new Date();
-            if (selectedDate < now) {
-                setMessage("Datum is verstreken. Kies een toekomstige datum.");
-                return;
-            }
-        }
-
+    const handleSubmit = async (e) => {
+        e.preventDefault();
         try {
-            const description = `Categorie: ${category}\nFrequentie: ${frequency}`;
-            const isoDue = dateTime && dateTime.trim() !== "" ? new Date(dateTime).toISOString() : "";
-            const task = await createTask(name, isoDue, description);
-            setMessage(`Taak '${task.content}' toegevoegd!`);
-            setCategory("boodschappenlijst");
-            setName("");
-            setDateTime("");
-            setFrequency("niet herhalen");
+            // Validatie
+            if (!taskData.title.trim()) throw new Error('Taaknaam is verplicht');
+            if (!taskData.dueDate) throw new Error('Deadline is verplicht');
+
+            // Notificatie permissie check
+            if (Notification.permission !== "granted") {
+                await Notification.requestPermission();
+            }
+
+            // Opslaan taak
+            if (isLinked) {
+                await createTask({
+                    content: taskData.title,
+                    due: { datetime: taskData.dueDate },
+                    description: taskData.description
+                });
+            } else {
+                await setDoc(doc(db, 'localTasks', `${user.uid}_${Date.now()}`), {
+                    ...taskData,
+                    userId: user.uid,
+                    createdAt: new Date().toISOString()
+                });
+            }
+
+            // Notificatie
+            if (Notification.permission === "granted") {
+                new Notification("Taak aangemaakt", {
+                    body: `${taskData.title} - ${new Date(taskData.dueDate).toLocaleDateString()}`
+                });
+            }
+
+            navigate('/home');
         } catch (error) {
-            console.error("Fout bij toevoegen van taak:", error);
-            setMessage("Fout bij toevoegen van taak.");
+            setMessage(error.message);
+            console.error("Opslaan mislukt:", error);
         }
-    }
+    };
 
     return (
         <div className="page-container">
             <h2>Nieuwe Taak</h2>
-            <div className="form-container new-task-form">
-                <label>
-                    Categorie:
-                    <select value={category} onChange={(e) => setCategory(e.target.value)}>
-                        <option value="boodschappenlijst">Boodschappenlijst</option>
-                        <option value="huishoudelijk">Huishoudelijk</option>
-                        <option value="werk">Werk</option>
-                        <option value="privé">Privé</option>
-                    </select>
-                </label>
-                <label>
-                    Naam:
-                    <InputField
-                        type="text"
-                        placeholder="Naam"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
+            <form onSubmit={handleSubmit}>
+                <InputField
+                    label="Taaknaam *"
+                    value={taskData.title}
+                    onChange={(e) => setTaskData({ ...taskData, title: e.target.value })}
+                />
+                <InputField
+                    type="datetime-local"
+                    label="Deadline *"
+                    value={taskData.dueDate}
+                    onChange={(e) => setTaskData({ ...taskData, dueDate: e.target.value })}
+                />
+                <div className="form-group">
+                    <label>Beschrijving</label>
+                    <textarea
+                        value={taskData.description}
+                        onChange={(e) => setTaskData({ ...taskData, description: e.target.value })}
                     />
-                </label>
-                <label>
-                    Datum en Tijd:
-                    <input
-                        type="datetime-local"
-                        value={dateTime}
-                        onChange={(e) => setDateTime(e.target.value)}
-                    />
-                </label>
-                <label>
-                    Frequentie:
-                    <select value={frequency} onChange={(e) => setFrequency(e.target.value)}>
-                        <option value="niet herhalen">Niet herhalen</option>
-                        <option value="elke dag">Elke dag</option>
-                        <option value="om de dag">Om de dag</option>
-                        <option value="elke week">Elke week</option>
-                        <option value="om de week">Om de week</option>
-                        <option value="elke maand">Elke maand</option>
-                    </select>
-                </label>
-                <button className="btn" onClick={handleAddTask}>Taak Toevoegen</button>
-            </div>
-            <p className="message">{message}</p>
+                </div>
+                <button type="submit" className="btn" disabled={isLoading}>
+                    {isLoading ? <Loader small /> : 'Opslaan'}
+                </button>
+                {message && <p className="error-message">{message}</p>}
+            </form>
         </div>
     );
 };
