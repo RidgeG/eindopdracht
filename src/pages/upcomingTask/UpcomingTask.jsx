@@ -1,42 +1,83 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import CalculateDate from '../../componenten/calculateDate.jsx';
+import React, { useContext, useEffect, useState } from 'react';
+import BigCalendarComponent from '../../componenten/BigCalendarComponent';
+import { TodoistContext } from '../../context/TodoistContext';
+import { AuthContext } from '../../context/AuthContext';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../../../firebaseConfig';
+import Loader from '../../componenten/Loader';
+import { Link } from 'react-router-dom';
 
-async function fetchUpcomingTask(callback) {
-    const TRELLO_API_KEY = "je_api_key";
-    const TRELLO_OAUTH_TOKEN = "je_oauth_token";
-    const LIST_ID = "je_list_id";
-    try {
-        const response = await axios.get(`https://api.trello.com/1/lists/${LIST_ID}/cards?key=${TRELLO_API_KEY}&token=${TRELLO_OAUTH_TOKEN}`);
-        const tasks = response.data;
-        const sortedTasks = tasks.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
-        callback(sortedTasks[0]);
-    } catch (error) {
-        console.error("Fout bij ophalen van aankomende taak:", error);
-    }
-}
-
-function UpcomingTask() {
-    const [task, setTask] = useState(null);
+const UpcomingTask = () => {
+    const { tasks, isLinked, fetchTasks } = useContext(TodoistContext);
+    const { user } = useContext(AuthContext);
+    const [localTasks, setLocalTasks] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchUpcomingTask(setTask);
-    }, []);
+        const fetchLocalTasks = async () => {
+            try {
+                const nextWeek = new Date();
+                nextWeek.setDate(nextWeek.getDate() + 7);
+
+                const q = query(
+                    collection(db, "localTasks"),
+                    where("userId", "==", user.uid),
+                    where("dueDate", ">=", new Date().toISOString()),
+                    where("dueDate", "<=", nextWeek.toISOString())
+                );
+                const querySnapshot = await getDocs(q);
+                setLocalTasks(querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data(),
+                    due: { datetime: doc.data().dueDate }
+                })));
+            } catch (error) {
+                console.error("Fout bij ophalen taken:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (isLinked) {
+            fetchTasks().finally(() => setLoading(false));
+        } else {
+            fetchLocalTasks();
+        }
+    }, [isLinked, user.uid, fetchTasks]);
+
+    const events = (isLinked ? tasks : localTasks)
+        .filter(task => task?.due?.datetime)
+        .map(task => ({
+            id: task.id,
+            title: task.content || task.title,
+            start: new Date(task.due.datetime),
+            end: new Date(task.due.datetime)
+        }));
 
     return (
-        <div>
-            <h2>Aankomende Taak</h2>
-            {task ? (
-                <div>
-                    <h3>{task.name}</h3>
-                    <p>Datum: <CalculateDate date={task.dueDate} /></p>
-                    <p>Beschrijving: {task.desc}</p>
-                </div>
+        <div className="page-container">
+            <h2>Aankomende Taken</h2>
+            {loading ? (
+                <Loader />
             ) : (
-                <p>Geen aankomende taak gevonden.</p>
+                <>
+                    {!isLinked && (
+                        <div className="info-banner">
+                            <p>
+                                Toont lokale taken.
+                                <Link to="/profile"> Koppel Todoist</Link> voor uitgebreide planning.
+                            </p>
+                        </div>
+                    )}
+                    <BigCalendarComponent
+                        view="week"
+                        date={new Date()}
+                        events={events}
+                    />
+                </>
             )}
         </div>
     );
-}
+};
 
 export default UpcomingTask;

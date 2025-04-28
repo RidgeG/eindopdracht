@@ -1,38 +1,56 @@
-import React, {useState, useEffect} from "react";
-import axios from "axios";
+import React, { useState, useEffect, useContext } from 'react';
+import BigCalendar from '../../componenten/BigCalendarComponent.jsx';
+import { TodoistContext } from '../../context/TodoistContext';
+import { AuthContext } from '../../context/AuthContext';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../../../firebaseConfig';
+import TaskDetailsModal from '../../componenten/TaskDetailsModal';
+import Loader from '../../componenten/Loader';
 
-async function fetchAllTask(callback) {
-    const TRELLO_API_KEY = "je_api_key";
-    const TRELLO_OAUTH_TOKEN = "je_oauth_token";
-    const LIST_ID = "je_list_id";
-
-    try{
-        const response = await axios.get(`https://api.trello.com/1/lists/${LIST_ID}/cards?key=${TRELLO_API_KEY}&token=${TRELLO_OAUTH_TOKEN}`);
-        callback(response.data);
-    } catch (error) {
-        console.error("Fout bij het ophalen van de taken", error);
-    }
-}
-
-function AllTasks() {
-    const [tasks, setTasks] = useState([]);
+const AllTasks = () => {
+    const [date, setDate] = useState(new Date());
+    const { tasks: todoistTasks, isLinked, fetchTasks } = useContext(TodoistContext);
+    const { user } = useContext(AuthContext);
+    const [localTasks, setLocalTasks] = useState([]);
+    const [selectedTask, setSelectedTask] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchAllTask(setTasks);
-    }, []);
+        const loadTasks = async () => {
+            try {
+                if (isLinked) {
+                    await fetchTasks();
+                } else {
+                    const q = query(collection(db, 'localTasks'), where('userId', '==', user.uid));
+                    const snapshot = await getDocs(q);
+                    setLocalTasks(snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data(),
+                        due: { datetime: doc.data().dueDate }
+                    })));
+                }
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadTasks();
+    }, [isLinked, user.uid, fetchTasks]);
 
+    if (loading) return <Loader />;
 
-return (
-    <div>
-        <h2>Maandkalender</h2>
-        <ul>
-            {tasks.map((task) => (
-                <li key={taks.id}>{taks.name}</li>
-            ))}
-        </ul>
-    </div>
-);
-
-}
+    return (
+        <div className="page-container">
+            <h2>Alle Taken</h2>
+            <BigCalendar
+                events={isLinked ? todoistTasks : localTasks}
+                onSelectEvent={setSelectedTask}
+                date={date}
+                onNavigate={setDate}
+                view="month"
+            />
+            {selectedTask && <TaskDetailsModal task={selectedTask} onClose={() => setSelectedTask(null)} />}
+        </div>
+    );
+};
 
 export default AllTasks;

@@ -1,5 +1,5 @@
 import React, {useContext } from 'react';
-import Navigate from 'react-router-dom'
+import {Navigate} from 'react-router-dom'
 import {AuthContext} from "../context/AuthContext.jsx";
 
 function ProtectedRoute({ children }) {
@@ -12,4 +12,4 @@ function ProtectedRoute({ children }) {
 
 }
 
-export default ProtectedRoute
+export default ProtectedRoute;
