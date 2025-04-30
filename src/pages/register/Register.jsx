@@ -1,48 +1,112 @@
 import React, { useState, useContext } from "react";
-import { AuthContext } from "../../context/AuthContext.jsx";
-import { useNavigate } from "react-router-dom";
-import InputField from "../../componenten/InputField.jsx";
+import { AuthContext } from "../../context/AuthContext";
+import { Link, useNavigate } from "react-router-dom";
+import InputField from "../../componenten/InputField";
+import Loader from "../../componenten/Loader";
 
 const Register = () => {
-    const { register } = useContext(AuthContext);
+    const { emailSignUp } = useContext(AuthContext);
     const navigate = useNavigate();
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [message, setMessage] = useState("");
+    const [formData, setFormData] = useState({
+        email: "",
+        password: "",
+        confirmPassword: ""
+    });
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    async function handleRegister(e) {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        try {
-            await register(email, password);
-            setMessage("Registratie succesvol! Je wordt ingelogd.");
-            setTimeout(() => {
-                navigate("/home");
-            }, 2000);
-        } catch (error) {
-            console.error("Registratie mislukt:", error);
-            setMessage("Registratie mislukt: " + error.message);
+        setError("");
+
+        if (!formData.email || !formData.password || !formData.confirmPassword) {
+            setError("Vul alle velden in");
+            return;
         }
-    }
+
+        if (formData.password !== formData.confirmPassword) {
+            setError("Wachtwoorden komen niet overeen");
+            return;
+        }
+
+        if (formData.password.length < 6) {
+            setError("Wachtwoord moet minimaal 6 tekens zijn");
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            await emailSignUp(formData.email, formData.password);
+            navigate("/home");
+        } catch (error) {
+            setError(mapErrorCodeToMessage(error.message));
+        }
+
+        setLoading(false);
+    };
+
+    const mapErrorCodeToMessage = (code) => {
+        switch (code) {
+            case "auth/email-already-in-use":
+                return "E-mailadres is al in gebruik";
+            case "auth/invalid-email":
+                return "Ongeldig e-mailadres";
+            case "auth/weak-password":
+                return "Wachtwoord moet minimaal 6 tekens zijn";
+            default:
+                return "Registratie mislukt";
+        }
+    };
 
     return (
-        <div className="form-container">
-            <h2>Registreren</h2>
-            <form onSubmit={handleRegister}>
-                <InputField
-                    type="email"
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                />
-                <InputField
-                    type="password"
-                    placeholder="Wachtwoord"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                />
-                <button type="submit" className="btn">Registreren</button>
-            </form>
-            <p className="message">{message}</p>
+        <div className="auth-container">
+            <div className="auth-card">
+                <h2>Registreren</h2>
+                <form onSubmit={handleSubmit}>
+                    <InputField
+                        type="email"
+                        label="E-mailadres"
+                        placeholder="voorbeeld@email.com"
+                        value={formData.email}
+                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                        required
+                    />
+                    <InputField
+                        type="password"
+                        label="Wachtwoord"
+                        placeholder="Minimaal 6 tekens"
+                        value={formData.password}
+                        onChange={(e) => setFormData({...formData, password: e.target.value})}
+                        required
+                    />
+                    <InputField
+                        type="password"
+                        label="Bevestig wachtwoord"
+                        placeholder="Herhaal uw wachtwoord"
+                        value={formData.confirmPassword}
+                        onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                        required
+                    />
+
+                    {error && <div className="error-message">{error}</div>}
+
+                    <button
+                        type="submit"
+                        className="btn primary"
+                        disabled={loading}
+                    >
+                        {loading ? <Loader small /> : "Account aanmaken"}
+                    </button>
+                </form>
+
+                <div className="auth-footer">
+                    <span>Al een account? </span>
+                    <Link to="/login" className="auth-link">
+                        Log hier in
+                    </Link>
+                </div>
+            </div>
         </div>
     );
 };

@@ -1,17 +1,22 @@
 rules_version = '2';
 service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    match /databases/{database}/documents {
+        match /users/{userId} {
+            allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
+        match /localTasks/{taskId} {
+            allow read, write: if
+                request.auth != null &&
+                request.auth.uid == resource.data.userId &&
+                resource.data.category in ["prive", "boodschappen", "huishouden", "werk"] &&
+                (resource.data.category != "werk" ||
+                    (resource.data.dueDate is timestamp &&
+                    resource.data.reminderDate is timestamp)) &&
+                (resource.data.category != "boodschappen" && resource.data.category != "huishouden" ||
+                    resource.data.checklist is array);
+        }
+        match /oauth_states/{userId} {
+            allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
     }
-    match /localTasks/{taskId} {
-      allow create: if request.auth != null;
-      allow read, update, delete: if request.auth != null
-        && request.auth.uid == resource.data.userId;
-    }
-    match /oauth_states/{userId} {
-      allow read, write: if request.auth != null
-        && request.auth.uid == userId;
-    }
-  }
 }

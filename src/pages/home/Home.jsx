@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useContext } from 'react';
-import BigCalendarComponent from '../../componenten/BigCalendarComponent';
+import React, { useContext, useEffect, useState } from 'react';
 import { TodoistContext } from '../../context/TodoistContext';
 import { AuthContext } from '../../context/AuthContext';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
+import BigCalendarComponent from '../../componenten/BigCalendarComponent';
 import Loader from '../../componenten/Loader';
-import { Link } from 'react-router-dom';
 
 const Home = () => {
     const [date, setDate] = useState(new Date());
@@ -15,41 +14,36 @@ const Home = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchLocalTasks = async () => {
+        const loadData = async () => {
             try {
-                const q = query(
-                    collection(db, "localTasks"),
-                    where("userId", "==", user.uid),
-                    where("dueDate", ">=", new Date().toISOString())
-                );
-                const querySnapshot = await getDocs(q);
-                setLocalTasks(querySnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data(),
-                    due: { datetime: doc.data().dueDate }
-                })));
-            } catch (error) {
-                console.error("Fout bij ophalen taken:", error);
+                if (isLinked) {
+                    await fetchTasks();
+                } else {
+                    const q = query(
+                        collection(db, "localTasks"),
+                        where("userId", "==", user.uid)
+                    );
+                    const snapshot = await getDocs(q);
+                    setLocalTasks(snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data(),
+                        start: new Date(doc.data().dueDate),
+                        end: new Date(doc.data().dueDate)
+                    })));
+                }
             } finally {
                 setLoading(false);
             }
         };
+        loadData();
+    }, [isLinked, user?.uid]);
 
-        if (isLinked) {
-            fetchTasks().finally(() => setLoading(false));
-        } else {
-            fetchLocalTasks();
-        }
-    }, [isLinked, user.uid, fetchTasks]);
-
-    const events = (isLinked ? tasks : localTasks)
-        .filter(task => task?.due?.datetime)
-        .map(task => ({
-            id: task.id,
-            title: task.content || task.title,
-            start: new Date(task.due.datetime),
-            end: new Date(task.due.datetime)
-        }));
+    const events = (isLinked ? tasks : localTasks).map(task => ({
+        id: task.id,
+        title: task.content || task.title,
+        start: task.start || new Date(task.due?.datetime || task.dueDate),
+        end: task.end || new Date(task.due?.datetime || task.dueDate)
+    }));
 
     return (
         <div className="page-container">
@@ -57,22 +51,12 @@ const Home = () => {
             {loading ? (
                 <Loader />
             ) : (
-                <>
-                    {!isLinked && (
-                        <div className="info-banner">
-                            <p>
-                                Gebruikt lokale opslag.
-                                <Link to="/profile"> Koppel Todoist</Link> voor synchronisatie.
-                            </p>
-                        </div>
-                    )}
-                    <BigCalendarComponent
-                        view="day"
-                        date={date}
-                        events={events}
-                        onNavigate={setDate}
-                    />
-                </>
+                <BigCalendarComponent
+                    view="day"
+                    date={date}
+                    events={events}
+                    onNavigate={setDate}
+                />
             )}
         </div>
     );

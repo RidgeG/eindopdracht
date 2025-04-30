@@ -1,87 +1,54 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '../context/AuthContext';
-import { TodoistContext } from '../context/TodoistContext';
-import Loader from '../componenten/Loader';
+import React, { useContext, useEffect, useState } from "react";
+import { AuthContext } from "../context/AuthContext";
+import { TodoistContext } from "../context/TodoistContext";
+import Loader from "../componenten/Loader";
 
-const ProfilePage = ({ onLogout }) => {
-    const { user } = useContext(AuthContext);
-    const {
-        redirectToTodoistOAuth,
-        isLinked,
-        isLoading,
-        error,
-        fetchTasks
-    } = useContext(TodoistContext);
-    const [status, setStatus] = useState('');
+const ProfilePage = () => {
+    const { user, logout } = useContext(AuthContext);
+    const { isLinked, redirectToTodoistOAuth, unlinkTodoist } = useContext(TodoistContext);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const success = params.get('success');
-        const error = params.get('error');
+        if(user) setLoading(false);
+    }, [user]);
 
-        if (success) setStatus('Todoist succesvol gekoppeld! 🎉');
-        if (error) setStatus(`Fout: ${decodeURIComponent(error)}`);
-    }, []);
+    if(loading) return <Loader />;
 
     return (
-        <div className="page-container user-profile">
-            <h2>Profiel</h2>
-            {user && (
-                <div className="profile-content">
-                    <div className="user-info">
-                        <p><strong>E-mail:</strong> {user.email}</p>
-                        <p><strong>Laatste login:</strong> {new Date(user.metadata.lastLoginAt).toLocaleString()}</p>
+        <div className="profile-page container">
+            <div className="profile-card card">
+                <div className="profile-header">
+                    <div className="avatar">
+                        {user.email[0].toUpperCase()}
                     </div>
+                    <h1>{user.email}</h1>
+                    <p>Lid sinds: {new Date(user.metadata.creationTime).toLocaleDateString()}</p>
+                </div>
 
-                    <div className="sync-section">
-                        <h3>Agenda Synchronisatie</h3>
-
-                        {status && (
-                            <div className={`status-message ${status.includes('🎉') ? 'success' : 'error'}`}>
-                                {status}
-                            </div>
-                        )}
-
-                        {!isLinked ? (
-                            <button
-                                className={`btn sync-button ${isLoading ? 'loading' : ''}`}
-                                onClick={redirectToTodoistOAuth}
-                                disabled={isLoading}
-                            >
-                                {isLoading ? (
-                                    <>
-                                        <Loader small />
-                                        <span>Bezig met verbinden...</span>
-                                    </>
-                                ) : (
-                                    'Verbind met Todoist'
-                                )}
-                            </button>
-                        ) : (
-                            <>
-                                <button
-                                    className="btn sync-button"
-                                    onClick={fetchTasks}
-                                >
-                                    Handmatig synchroniseren
-                                </button>
-                                <p className="sync-status">
-                                    Laatste synchronisatie: {new Date().toLocaleTimeString()}
-                                </p>
-                            </>
-                        )}
-
-                        {error && <p className="error-message">{error}</p>}
+                <div className="profile-stats">
+                    <div className="stat-item">
+                        <h3>{user.taskCount || 0}</h3>
+                        <p>Taken</p>
                     </div>
+                    <div className="stat-item">
+                        <h3>{user.completedTasks || 0}</h3>
+                        <p>Voltooid</p>
+                    </div>
+                </div>
 
+                <div className="profile-actions">
                     <button
-                        className="btn logout-button"
-                        onClick={onLogout}
+                        onClick={isLinked ? unlinkTodoist : redirectToTodoistOAuth}
+                        className={`btn ${isLinked ? 'btn-danger' : 'btn-success'}`}
+                        disabled={loading}
                     >
+                        {isLinked ? 'Todoist ontkoppelen' : 'Todoist koppelen'}
+                    </button>
+                    <button onClick={logout} className="btn btn-primary">
                         Uitloggen
                     </button>
                 </div>
-            )}
+            </div>
         </div>
     );
 };

@@ -1,47 +1,60 @@
-import React, { useState, useContext,  } from "react";
-import { AuthContext } from "../../context/AuthContext.jsx";
+import React, { useState, useContext } from "react";
+import { AuthContext } from "../../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
-import InputField from "../../componenten/InputField.jsx";
+import InputField from "../../componenten/InputField";
+import Loader from "../../componenten/Loader";
 
 const Login = () => {
-    const { login } = useContext(AuthContext);
+    const { emailSignIn } = useContext(AuthContext);
     const navigate = useNavigate();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [message, setMessage] = useState("");
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    async function handleSubmit(e) {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
         try {
-            await login(email, password);
-            setMessage("Login succesvol");
-            navigate("/home");
-        } catch (error) {
-            console.error("Inloggen mislukt:", error);
-            setMessage("Inloggen mislukt: " + error.message);
+            await emailSignIn(email, password);
+            navigate("/");
+        } catch (err) {
+            setError("Inloggen mislukt - controleer je gegevens");
         }
-    }
+        setLoading(false);
+    };
 
     return (
-        <div className="form-container">
-            <h2>Inloggen</h2>
-            <form onSubmit={handleSubmit}>
-                <InputField
-                    type="email"
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                />
-                <InputField
-                    type="password"
-                    placeholder="Wachtwoord"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                />
-                <button type="submit" className="btn">Inloggen</button>
-            </form>
-            <p className="message">{message}</p>
-            <p>Heb je nog geen account? <Link to="/register">Registreer hier</Link></p>
+        <div className="auth-page">
+            <div className="auth-card">
+                <h2>Inloggen</h2>
+                <form onSubmit={handleSubmit}>
+                    <InputField
+                        type="email"
+                        label="E-mailadres"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                    />
+                    <InputField
+                        type="password"
+                        label="Wachtwoord"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                    />
+
+                    {error && <div className="error">{error}</div>}
+
+                    <button type="submit" disabled={loading} className="primary-btn">
+                        {loading ? <Loader /> : "Inloggen"}
+                    </button>
+                </form>
+
+                <div className="auth-links">
+                    <Link to="/registreren">Nog geen account? Registreer</Link>
+                </div>
+            </div>
         </div>
     );
 };

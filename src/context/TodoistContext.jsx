@@ -1,104 +1,54 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { TodoistApi } from '@doist/todoist-api-typescript';
-import { AuthContext } from './AuthContext';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { db, functions } from '../../firebaseConfig';
-import { httpsCallable } from 'firebase/functions';
-import { nanoid } from 'nanoid';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { AuthContext } from "./AuthContext";
+import { doc, getDoc, setDoc, updateDoc, deleteField } from "firebase/firestore";
+import { db } from "../../firebaseConfig";
+import { nanoid } from "nanoid";
 
 export const TodoistContext = createContext();
 
 export const TodoistProvider = ({ children }) => {
     const { user } = useContext(AuthContext);
-    const [api, setApi] = useState(null);
-    const [tasks, setTasks] = useState([]);
     const [isLinked, setIsLinked] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null);
 
-    const exchangeToken = httpsCallable(functions, 'todoistOAuthHandler');
-
-    // Fetch taken van Todoist API
-    const fetchTasks = useCallback(async () => {
-        if (!api) return;
+    const redirectToTodoistOAuth = async () => {
         try {
-            setIsLoading(true);
-            const tasks = await api.getTasks();
-            setTasks(tasks);
-            setError(null);
+            const state = nanoid(16);
+            await setDoc(doc(db, "oauth_states", user.uid), { state });
+            window.location.href = `https://todoist.com/oauth/authorize?client_id=d55dd65057de47d2b169cfefb010d605&scope=data:read_write,data:delete&state=${state}`;
         } catch (error) {
-            setError("Kon taken niet ophalen: " + error.message);
-            setTasks([]);
-        } finally {
-            setIsLoading(false);
+            console.error("OAuth redirect error:", error);
+            alert("Er ging iets mis bij het doorverwijzen naar Todoist");
         }
-    }, [api]);
+    };
 
-    const redirectToTodoistOAuth = useCallback(async () => {
+    const unlinkTodoist = async () => {
         try {
-            setIsLoading(true);
-            const state = nanoid(12);
-            await setDoc(doc(db, "oauth_states", user.uid), {
-                state,
-                timestamp: new Date()
+            await updateDoc(doc(db, "users", user.uid), {
+                todoistToken: deleteField()
             });
-
-            window.location.href =
-                `https://todoist.com/oauth/authorize?client_id=d55dd65057de47d2b169cfefb010d605&scope=data:read_write&state=${state}&redirect_uri=http://localhost:5173/todoist-oauth-callback`;
+            setIsLinked(false);
+            alert("Todoist succesvol ontkoppeld");
         } catch (error) {
-            setError("Kon niet verbinden met Todoist: " + error.message);
-        } finally {
-            setIsLoading(false);
+            console.error("Ontkoppelfout:", error);
+            alert("Ontkoppelen mislukt");
         }
-    }, [user]);
+    };
 
-    // Token exchange handler
-    const exchangeCodeForToken = useCallback(async (code, state) => {
-        try {
-            const stateDoc = await getDoc(doc(db, "oauth_states", user.uid));
-            if (!stateDoc.exists() || stateDoc.data().state !== state) throw new Error("Ongeldige state");
-
-            const { data: { access_token } } = await exchangeToken({ code });
-            await setDoc(doc(db, "users", user.uid), { todoistToken: access_token }, { merge: true });
-
-            setApi(new TodoistApi(access_token));
-            setIsLinked(true);
-        } catch (error) {
-            throw new Error("Autorisatie mislukt: " + error.message);
-        }
-    }, [user, exchangeToken]);
-
-    // Initialiseer API bij mount
     useEffect(() => {
-        const initializeApi = async () => {
-            if (!user) return;
-
-            const userDoc = await getDoc(doc(db, "users", user.uid));
-            if (userDoc.exists() && userDoc.data().todoistToken) {
-                try {
-                    const apiInstance = new TodoistApi(userDoc.data().todoistToken);
-                    await apiInstance.getProjects(); // Test connectie
-                    setApi(apiInstance);
-                    setIsLinked(true);
-                } catch (error) {
-                    console.error("Ongeldig token:", error);
-                    setIsLinked(false);
-                }
+        const checkLinkStatus = async () => {
+            if(user) {
+                const docSnap = await getDoc(doc(db, "users", user.uid));
+                setIsLinked(!!docSnap.data()?.todoistToken);
             }
         };
-        initializeApi();
+        checkLinkStatus();
     }, [user]);
 
     return (
         <TodoistContext.Provider value={{
-            api,
-            tasks,
-            isLoading,
-            error,
             isLinked,
-            fetchTasks,
             redirectToTodoistOAuth,
-            exchangeCodeForToken
+            unlinkTodoist
         }}>
             {children}
         </TodoistContext.Provider>

@@ -1,87 +1,179 @@
-import React, { useState, useContext } from 'react';
-import { TodoistContext } from '../../context/TodoistContext';
-import { AuthContext } from '../../context/AuthContext';
-import { doc, setDoc } from 'firebase/firestore';
-import { db } from '../../../firebaseConfig';
-import InputField from '../../componenten/InputField';
-import { useNavigate } from 'react-router-dom';
-import Loader from '../../componenten/Loader';
+import React, { useState, useContext, useEffect } from "react";
+import { AuthContext } from "../../context/AuthContext";
+import { TodoistContext } from "../../context/TodoistContext";
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "../../../firebaseConfig";
+import InputField from "../../componenten/InputField";
+import { nanoid } from "nanoid";
+import Loader from "../../componenten/Loader";
 
 const NewTask = () => {
-    const { createTask, isLinked, isLoading } = useContext(TodoistContext);
     const { user } = useContext(AuthContext);
-    const [taskData, setTaskData] = useState({ title: '', dueDate: '', description: '' });
-    const [message, setMessage] = useState('');
-    const navigate = useNavigate();
+    const { isLinked } = useContext(TodoistContext);
+    const [task, setTask] = useState({
+        title: "",
+        dueDate: "",
+        priority: "medium",
+        category: "prive",
+        checklist: [],
+        reminderDate: ""
+    });
+    const [submitting, setSubmitting] = useState(false);
+
+    // Automatische herinnering voor werk-taken
+    useEffect(() => {
+        if (task.category === "werk" && task.dueDate) {
+            const dueDate = new Date(task.dueDate);
+            const reminderDate = new Date(dueDate);
+            reminderDate.setDate(dueDate.getDate() - 2);
+            setTask(prev => ({
+                ...prev,
+                reminderDate: reminderDate.toISOString().slice(0, 16)
+            }));
+        }
+    }, [task.dueDate, task.category]);
+
+    const handleChecklistChange = (index, value) => {
+        const newChecklist = [...task.checklist];
+        newChecklist[index] = { ...newChecklist[index], item: value };
+        setTask({ ...task, checklist: newChecklist });
+    };
+
+    const addChecklistItem = () => {
+        setTask({
+            ...task,
+            checklist: [...task.checklist, { item: "", completed: false }]
+        });
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setSubmitting(true);
+
         try {
-            // Validatie
-            if (!taskData.title.trim()) throw new Error('Taaknaam is verplicht');
-            if (!taskData.dueDate) throw new Error('Deadline is verplicht');
+            const taskData = {
+                ...task,
+                userId: user.uid,
+                createdAt: new Date().toISOString(),
+                completed: false,
+                ...(task.category !== "werk" && { dueDate: null, reminderDate: null }),
+                ...((task.category !== "boodschappen" && task.category !== "huishouden") && { checklist: [] })
+            };
 
-            // Notificatie permissie check
-            if (Notification.permission !== "granted") {
-                await Notification.requestPermission();
-            }
-
-            // Opslaan taak
             if (isLinked) {
-                await createTask({
-                    content: taskData.title,
-                    due: { datetime: taskData.dueDate },
-                    description: taskData.description
-                });
+                alert('Todoist-integratie komt binnenkort!');
             } else {
-                await setDoc(doc(db, 'localTasks', `${user.uid}_${Date.now()}`), {
-                    ...taskData,
-                    userId: user.uid,
-                    createdAt: new Date().toISOString()
+                await setDoc(doc(db, "localTasks", nanoid()), taskData);
+                setTask({
+                    title: "",
+                    dueDate: "",
+                    priority: "medium",
+                    category: "prive",
+                    checklist: [],
+                    reminderDate: ""
                 });
+                alert("Taak opgeslagen!");
             }
-
-            // Notificatie
-            if (Notification.permission === "granted") {
-                new Notification("Taak aangemaakt", {
-                    body: `${taskData.title} - ${new Date(taskData.dueDate).toLocaleDateString()}`
-                });
-            }
-
-            navigate('/home');
         } catch (error) {
-            setMessage(error.message);
-            console.error("Opslaan mislukt:", error);
+            console.error("Opslagfout:", error);
+            alert("Opslaan mislukt");
+        } finally {
+            setSubmitting(false);
         }
     };
 
     return (
-        <div className="page-container">
-            <h2>Nieuwe Taak</h2>
-            <form onSubmit={handleSubmit}>
-                <InputField
-                    label="Taaknaam *"
-                    value={taskData.title}
-                    onChange={(e) => setTaskData({ ...taskData, title: e.target.value })}
-                />
-                <InputField
-                    type="datetime-local"
-                    label="Deadline *"
-                    value={taskData.dueDate}
-                    onChange={(e) => setTaskData({ ...taskData, dueDate: e.target.value })}
-                />
-                <div className="form-group">
-                    <label>Beschrijving</label>
-                    <textarea
-                        value={taskData.description}
-                        onChange={(e) => setTaskData({ ...taskData, description: e.target.value })}
-                    />
-                </div>
-                <button type="submit" className="btn" disabled={isLoading}>
-                    {isLoading ? <Loader small /> : 'Opslaan'}
-                </button>
-                {message && <p className="error-message">{message}</p>}
-            </form>
+        <div className="container">
+            <div className="card">
+                <h2>Nieuwe Taak</h2>
+                <form onSubmit={handleSubmit} className="task-form">
+                    <div className="form-group">
+                        <label>Categorie</label>
+                        <select
+                            value={task.category}
+                            onChange={(e) => setTask({...task, category: e.target.value})}
+                            className="input-field"
+                            required
+                        >
+                            <option value="prive">Privé</option>
+                            <option value="boodschappen">Boodschappen</option>
+                            <option value="huishouden">Huishouden</option>
+                            <option value="werk">Werk</option>
+                        </select>
+                    </div>
+
+                    <div className="form-group">
+                        <label>Titel</label>
+                        <InputField
+                            type="text"
+                            value={task.title}
+                            onChange={(e) => setTask({...task, title: e.target.value})}
+                            required
+                        />
+                    </div>
+
+                    {(task.category === "boodschappen" || task.category === "huishouden") && (
+                        <div className="form-group">
+                            <label>Checklist items</label>
+                            {task.checklist.map((item, index) => (
+                                <div key={index} className="checklist-item">
+                                    <InputField
+                                        type="text"
+                                        value={item.item}
+                                        onChange={(e) => handleChecklistChange(index, e.target.value)}
+                                        placeholder="Item toevoegen"
+                                        required
+                                    />
+                                </div>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={addChecklistItem}
+                                className="btn btn-secondary"
+                            >
+                                + Item toevoegen
+                            </button>
+                        </div>
+                    )}
+
+                    {task.category === "werk" && (
+                        <div className="form-group">
+                            <label>Deadline</label>
+                            <InputField
+                                type="datetime-local"
+                                value={task.dueDate}
+                                onChange={(e) => setTask({...task, dueDate: e.target.value})}
+                                required
+                            />
+                            <p className="hint-text">
+                                Automatische herinnering op: {task.reminderDate || 'Niet ingesteld'}
+                            </p>
+                        </div>
+                    )}
+
+                    <div className="form-group">
+                        <label>Prioriteit</label>
+                        <div className="priority-select">
+                            {['low', 'medium', 'high'].map((level) => (
+                                <label key={level} className="priority-option">
+                                    <input
+                                        type="radio"
+                                        name="priority"
+                                        value={level}
+                                        checked={task.priority === level}
+                                        onChange={(e) => setTask({...task, priority: e.target.value})}
+                                    />
+                                    <span className="priority-label">{level}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+
+                    <button type="submit" className="btn btn-primary" disabled={submitting}>
+                        {submitting ? <Loader small /> : 'Taak opslaan'}
+                    </button>
+                </form>
+            </div>
         </div>
     );
 };
