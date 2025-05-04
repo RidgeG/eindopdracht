@@ -1,11 +1,12 @@
-import React from "react";
+import React from 'react';
 
-function Loader() {
+const Loader = () => {
     return (
         <div className="loader">
+            <div className="spinner"></div>
             <p>Laden...</p>
         </div>
     );
-}
+};
 
 export default Loader;

@@ -12,28 +12,34 @@ const Register = () => {
         confirmPassword: ''
     });
     const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+
+    const validateForm = () => {
+        if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+            setError('Ongeldig e-mailadres');
+            return false;
+        }
+        if (formData.password.length < 8) {
+            setError('Wachtwoord moet minimaal 8 tekens zijn');
+            return false;
+        }
+        if (formData.password !== formData.confirmPassword) {
+            setError('Wachtwoorden komen niet overeen');
+            return false;
+        }
+        return true;
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setLoading(true);
         setError('');
 
-        if (formData.password !== formData.confirmPassword) {
-            setError('Wachtwoorden komen niet overeen');
-            setLoading(false);
-            return;
-        }
+        if (!validateForm()) return;
 
         try {
-            const success = await register(formData.email, formData.password);
-            if (success) {
-                navigate('/login');
-            } else {
-                setError('Registratie mislukt');
-            }
-        } finally {
-            setLoading(false);
+            await register(formData.email, formData.password);
+            navigate('/login');
+        } catch (error) {
+            setError('Registratie mislukt - probeer een andere e-mail');
         }
     };
 
@@ -66,22 +72,16 @@ const Register = () => {
 
                     {error && <div className="error-message">{error}</div>}
 
-                    <button
-                        type="submit"
-                        className="btn btn-primary"
-                        disabled={loading}
-                    >
-                        {loading ? 'Bezig...' : 'Account aanmaken'}
+                    <button type="submit" className="btn btn-primary">
+                        Account aanmaken
                     </button>
                 </form>
 
                 <div className="auth-footer">
-                    <p>
-                        Al een account?{' '}
-                        <Link to="/login" className="auth-link">
-                            Log hier in
-                        </Link>
-                    </p>
+                    <span>Al een account? </span>
+                    <Link to="/login" className="auth-link">
+                        Log hier in
+                    </Link>
                 </div>
             </div>
         </div>

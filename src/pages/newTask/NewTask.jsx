@@ -11,62 +11,159 @@ const NewTask = () => {
         title: '',
         dueDate: '',
         category: 'prive',
-        checklist: []
+        items: []
     });
+    const [currentItem, setCurrentItem] = useState('');
     const [loading, setLoading] = useState(false);
-    const [feedback, setFeedback] = useState('');
+    const [feedback, setFeedback] = useState({ type: '', message: '' });
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
 
+        if (!validateForm()) {
+            setLoading(false);
+            return;
+        }
+
         try {
             const taskData = {
-                content: task.title,
-                due_date: task.dueDate,
-                description: `Gemaakt door: ${user?.email}`
-            };
-
-            await addTask(isLinked ? taskData : {
                 ...task,
                 userId: user?.uid,
                 createdAt: new Date().toISOString()
-            });
+            };
 
-            setFeedback(`Taak "${task.title} opgeslagen in ${isLinked ? 'Todoist' : 'lokale opslag'}!`);
-            setTask({ title: '', dueDate: '', category: 'prive', checklist: [] });
+            await addTask(taskData);
+            setFeedback({
+                type: 'success',
+                message: `Taak "${task.title}" opgeslagen in ${isLinked ? 'Todoist' : 'lokale opslag'}!`
+            });
+            resetForm();
         } catch (error) {
-            setFeedback(`Fout: ${error.message}`);
+            setFeedback({
+                type: 'error',
+                message: `Fout: ${error.message}`
+            });
         } finally {
             setLoading(false);
-            setTimeout(() => setFeedback(''), 3000);
+            setTimeout(() => setFeedback({ type: '', message: '' }), 3000);
         }
     };
 
+    const validateForm = () => {
+        if (!task.title.trim()) {
+            setFeedback({ type: 'error', message: 'Titel is verplicht' });
+            return false;
+        }
+
+        if (['werk', 'prive'].includes(task.category) && !task.dueDate) {
+            setFeedback({ type: 'error', message: 'Deadline is verplicht voor deze categorie' });
+            return false;
+        }
+
+        if (['boodschappen', 'huishouden'].includes(task.category) && task.items.length === 0) {
+            setFeedback({ type: 'error', message: 'Voeg minimaal 1 item toe' });
+            return false;
+        }
+        return true;
+    };
+
+    const resetForm = () => {
+        setTask({
+            title: '',
+            dueDate: '',
+            category: 'prive',
+            items: []
+        });
+        setCurrentItem('');
+    };
+
     return (
-        <div className="container">
-            <div className="card">
-                <h2>Nieuwe Taak {isLinked && "(Todoist)"}</h2>
-                {feedback && <div className="feedback-banner">{feedback}</div>}
+        <div className="page-container">
+            <div className="form-card">
+                <h2>Nieuwe Taak {isLinked && <span className="todoist-badge">Todoist</span>}</h2>
+
+                {feedback.message && (
+                    <div className={`feedback-banner ${feedback.type}`}>
+                        {feedback.message}
+                    </div>
+                )}
 
                 <form onSubmit={handleSubmit}>
                     <InputField
                         label="Titel"
                         value={task.title}
-                        onChange={e => setTask({ ...task, title: e.target.value })}
+                        onChange={(e) => setTask({ ...task, title: e.target.value })}
                         required
                     />
 
-                    <div className="form-group">
-                        <label>Deadline</label>
-                        <InputField
-                            type="datetime-local"
-                            value={task.dueDate}
-                            onChange={e => setTask({ ...task, dueDate: e.target.value })}
-                        />
+                    <div className="form-section">
+                        <label>Categorie</label>
+                        <div className="category-grid">
+                            {['boodschappen', 'huishouden', 'werk', 'prive'].map((category) => (
+                                <button
+                                    key={category}
+                                    type="button"
+                                    className={`category-btn ${task.category === category ? 'active' : ''} ${category}`}
+                                    onClick={() => setTask({ ...task, category })}
+                                >
+                                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
-                    <button type="submit" className="btn btn-primary" disabled={loading}>
+                    {['boodschappen', 'huishouden'].includes(task.category) ? (
+                        <div className="form-section">
+                            <label>Items toevoegen</label>
+                            <div className="item-input-group">
+                                <input
+                                    type="text"
+                                    value={currentItem}
+                                    onChange={(e) => setCurrentItem(e.target.value)}
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter' && currentItem.trim()) {
+                                            setTask({ ...task, items: [...task.items, currentItem.trim()] });
+                                            setCurrentItem('');
+                                        }
+                                    }}
+                                    placeholder="Voeg item toe (Enter om toe te voegen)"
+                                />
+                                <div className="item-list">
+                                    {task.items.map((item, index) => (
+                                        <div key={index} className="item">
+                                            <span>{item}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => setTask({
+                                                    ...task,
+                                                    items: task.items.filter((_, i) => i !== index)
+                                                })}
+                                            >
+                                                &times;
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="form-section">
+                            <InputField
+                                type="datetime-local"
+                                label="Deadline"
+                                value={task.dueDate}
+                                onChange={(e) => setTask({ ...task, dueDate: e.target.value })}
+                                required
+                            />
+                        </div>
+                    )}
+
+                    <button
+                        type="submit"
+                        className="btn-primary"
+                        disabled={loading}
+                    >
                         {loading ? <Loader small /> : 'Taak Opslaan'}
                     </button>
                 </form>

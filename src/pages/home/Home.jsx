@@ -6,36 +6,44 @@ import Loader from '../../componenten/Loader';
 
 const Home = () => {
     const { user } = useAuth();
-    const { tasks, getTasks } = useTodoist();
-    const [loading, setLoading] = useState(true);
+    const { tasks } = useTodoist();
+    const [isInitialized, setIsInitialized] = useState(false);
 
-    useEffect(() => {
-        const loadTasks = async () => {
-            await getTasks();
-            setLoading(false);
-        };
-        loadTasks();
-    }, [getTasks]);
 
     const todayTasks = tasks.filter(task => {
-        const taskDate = new Date(task.due?.date || task.createdAt);
+        const taskDate = new Date(task.dueDate || task.createdAt);
         return taskDate.toDateString() === new Date().toDateString();
     });
 
+
+    useEffect(() => {
+        if (tasks.length > 0 && !isInitialized) {
+            setIsInitialized(true);
+        }
+    }, [tasks, isInitialized]);
+
     return (
-        <div className="page-container">
+        <div className="home-container">
             <h2>Welkom {user?.email}</h2>
-            <h3>Vandaag</h3>
-            {loading ? <Loader /> : (
+            <h3>Taken voor vandaag</h3>
+
+            <div className="auto-fetch-container">
+                {!isInitialized && (
+                    <div className="loading-overlay">
+                        <Loader />
+                    </div>
+                )}
+
                 <BigCalendarComponent
                     view="day"
                     events={todayTasks.map(task => ({
-                        title: task.content || task.title,
-                        start: new Date(task.due?.date || task.createdAt),
-                        end: new Date(task.due?.date || task.createdAt)
+                        title: task.title,
+                        start: new Date(task.dueDate || task.createdAt),
+                        end: new Date(task.dueDate || task.createdAt),
+                        className: task.category
                     }))}
                 />
-            )}
+            </div>
         </div>
     );
 };

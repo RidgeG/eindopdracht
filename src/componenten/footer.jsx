@@ -1,11 +1,11 @@
-import React from "react";
+import React from 'react';
 
-function Footer() {
+const Footer = () => {
     return (
         <footer className="footer">
-            <p>&copy; 2025 Kalender App. Alle rechten voorbehouden.</p>
+            <p>&copy; {new Date().getFullYear()} ADHD Kalender</p>
         </footer>
     );
-}
+};
 
 export default Footer;

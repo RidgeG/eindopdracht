@@ -1,21 +1,44 @@
-/* Header */
-.header {
-    background: var(--color-primary);
-    color: white;
-    padding: 1rem 0;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    position: sticky;
-    top: 0;
-    z-index: 1000;
+:root {
+    /* Kleurenpalet */
+    --primary: #6366f1;
+    --primary-hover: #818cf8;
+    --success: #10b981;
+    --error: #ef4444;
+    --warning: #f59e0b;
+    --todoist: #e44332;
+    --text-primary: #1f2937;
+    --text-secondary: #6b7280;
+    --border-color: #e5e7eb;
+    --card-bg: #ffffff;
+    --bg-color: #f8fafc;
+    --shadow-color: rgba(0,0,0,0.1);
+
+    /* Categorie kleuren */
+    --boodschappen: #3b82f6;
+    --huishouden: #10b981;
+    --werk: #f59e0b;
+    --prive: #8b5cf6;
 }
 
-.header-content {
+.dark-theme {
+    --text-primary: #f3f4f6;
+    --text-secondary: #9ca3af;
+    --card-bg: #1f2937;
+    --bg-color: #111827;
+    --border-color: #374151;
+    --shadow-color: rgba(255,255,255,0.05);
+}
+
+/* Header */
+.header {
+    background: var(--card-bg);
+    padding: 1rem 2rem;
+    box-shadow: 0 2px 10px var(--shadow-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 1rem;
+    flex-wrap: wrap;
+    gap: 1rem;
 }
 
 .nav-list {
@@ -24,121 +47,197 @@
     list-style: none;
     margin: 0;
     padding: 0;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .nav-list button {
     background: none;
     border: none;
-    color: inherit;
+    color: var(--text-primary);
     padding: 0.5rem 1rem;
-    border-radius: 6px;
+    border-radius: 8px;
+    transition: all 0.2s;
     cursor: pointer;
-    transition: background 0.2s;
+    flex-shrink: 0;
 }
 
 .nav-list button:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(var(--primary), 0.1);
+    transform: translateY(-2px);
 }
 
 /* Profielpagina */
-.profile-container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 2rem 1rem;
-}
-
 .profile-header {
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 3rem;
+    width: 100%;
 }
 
-.user-avatar {
+.avatar {
     width: 100px;
     height: 100px;
-    border-radius: 50%;
-    background: var(--color-primary);
+    background-color: var(--primary);
     color: white;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 2.5rem;
     margin: 0 auto 1rem;
+    box-shadow: 0 4px 6px var(--shadow-color);
 }
 
-.integration-section {
-    background: var(--color-card-bg);
-    border-radius: 12px;
-    padding: 2rem;
-    margin-top: 2rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-/* Takenformulier */
-.task-form {
-    max-width: 600px;
-    margin: 0 auto;
+.profile-grid {
     display: grid;
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    width: 100%;
+    grid-auto-rows: minmax(200px, auto);
 }
 
-.checklist-item {
+.storage-actions {
     display: flex;
     gap: 1rem;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.btn-todoist {
+    background: rgba(var(--todoist), 0.1);
+    color: var(--todoist);
+    border: 1px solid var(--todoist);
+    flex: 1 1 auto;
+}
+
+.btn-todoist:hover {
+    background: rgba(var(--todoist), 0.2);
+}
+
+/* Progress Bar */
+.progress-bar-container {
+    height: 12px;
+    background-color: rgba(var(--primary), 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background-color: var(--primary);
+    border-radius: 8px;
+    transition: width 0.3s ease-in-out;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+/* Todoist koppelknop */
+.todoist-connection {
+    display: flex;
     align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    margin-top: 1rem;
+    width: 100%;
+}
+
+.todoist-status {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--error);
+    flex-shrink: 0;
+}
+
+.todoist-status.connected {
+    background: var(--success);
+}
+
+/* Formulieren */
+.input-group {
+    margin-bottom: 1.5rem;
+    width: 100%;
+}
+
+.input-field {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--card-bg);
+    color: var(--text-primary);
+    transition: border-color 0.3s;
 }
 
 /* Kalender */
-.calendar-container {
-    height: 600px;
-    border: 1px solid var(--color-border);
-    border-radius: 12px;
+.rbc-calendar {
+    background: var(--card-bg);
+    border-radius: 16px;
     overflow: hidden;
-    margin: 2rem 0;
+    box-shadow: 0 4px 6px var(--shadow-color);
+    width: 100%;
 }
 
-/* Lijstpagina */
-.lists-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 2rem;
-    margin-top: 2rem;
+.rbc-event {
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
 }
 
-.list-card {
-    background: var(--color-card-bg);
-    padding: 1.5rem;
+/* Knoppen */
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
 }
 
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+/* Responsive design */
 @media (max-width: 768px) {
-    .header-content {
+    .header {
         flex-direction: column;
+        padding: 1rem;
         gap: 1rem;
     }
 
+    .profile-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
     .nav-list {
-        flex-wrap: wrap;
-        justify-content: center;
+        gap: 0.5rem;
     }
 
-    .calendar-container {
-        height: 400px;
-    }
-
-    .profile-container {
+    .page-container {
         padding: 1rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .auth-card {
-        padding: 1.5rem;
+        gap: 1.5rem;
     }
 
-    .user-avatar {
-        width: 80px;
-        height: 80px;
-        font-size: 2rem;
+    .storage-actions {
+        flex-direction: column;
     }
 }

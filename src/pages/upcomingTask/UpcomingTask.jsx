@@ -1,33 +1,28 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useContext } from 'react';
 import { useTodoist } from '../../context/TodoistContext';
 import BigCalendarComponent from '../../componenten/BigCalendarComponent';
-import Loader from '../../componenten/Loader';
 
 const UpcomingTasks = () => {
-    const { tasks, getTasks } = useTodoist();
-    const [loading, setLoading] = useState(true);
+    const { tasks } = useTodoist();
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
 
-    useEffect(() => {
-        const loadTasks = async () => {
-            await getTasks();
-            setLoading(false);
-        };
-        loadTasks();
-    }, [getTasks]);
+    const upcomingTasks = tasks.filter(task =>
+        new Date(task.dueDate) > new Date() &&
+        new Date(task.dueDate) <= nextWeek
+    );
 
     return (
         <div className="page-container">
             <h2>Aankomende Taken</h2>
-            {loading ? <Loader /> : (
-                <BigCalendarComponent
-                    view="week"
-                    events={tasks.map(task => ({
-                        title: task.content || task.title,
-                        start: new Date(task.due?.date || task.createdAt),
-                        end: new Date(task.due?.date || task.createdAt)
-                    }))}
-                />
-            )}
+            <BigCalendarComponent
+                events={upcomingTasks.map(task => ({
+                    title: task.title,
+                    start: new Date(task.dueDate),
+                    end: new Date(task.dueDate)
+                }))}
+                view="week"
+            />
         </div>
     );
 };

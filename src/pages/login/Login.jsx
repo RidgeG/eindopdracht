@@ -19,12 +19,10 @@ const Login = () => {
         setError('');
 
         try {
-            const success = await login(formData.email, formData.password);
-            if (success) {
-                navigate('/home');
-            } else {
-                setError('Ongeldige inloggegevens');
-            }
+            await login(formData.email, formData.password);
+            navigate('/home');
+        } catch (error) {
+            setError('Ongeldige inloggegevens');
         } finally {
             setLoading(false);
         }

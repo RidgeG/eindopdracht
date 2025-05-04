@@ -20,7 +20,7 @@ const Header = () => {
                         <li><button onClick={() => navigate("/alltasks")}>Overzicht</button></li>
                         <li><button onClick={() => navigate("/lists")}>Lijsten</button></li>
                         <li><button onClick={() => navigate("/newtask")}>Nieuwe Taak</button></li>
-                        <li><button onClick={()=>navigate("/upcomming")}>Aankomede Taken</button></li>
+                        <li><button onClick={()=>navigate("/upcoming")}>Aankomede Taken</button></li>
                         {user && (
                             <>
                                 <li><button onClick={() => navigate("/profile")}>Profiel</button></li>

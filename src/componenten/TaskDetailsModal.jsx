@@ -5,35 +5,21 @@ const TaskDetailsModal = ({ task, onClose }) => {
     if (!task) return null;
 
     return (
-        <Modal isOpen={!!task} onClose={onClose}>
+        <Modal isOpen={true} onClose={onClose}>
             <div className="task-details">
                 <h3>{task.title}</h3>
-                <div className="task-meta">
-                    <p><strong>Categorie:</strong> {task.category}</p>
-                    {task.dueDate && (
-                        <p><strong>Deadline:</strong> {new Date(task.dueDate).toLocaleString()}</p>
-                    )}
-                </div>
-
+                <p><strong>Deadline:</strong> {new Date(task.dueDate).toLocaleString()}</p>
                 {task.checklist?.length > 0 && (
-                    <div className="checklist-section">
-                        <h4>Checklist</h4>
+                    <div className="checklist">
+                        <h4>Checklist:</h4>
                         {task.checklist.map((item, index) => (
                             <div key={index} className="checklist-item">
-                                <input
-                                    type="checkbox"
-                                    checked={item.completed}
-                                    readOnly
-                                />
-                                <span>{item}</span>
+                                <input type="checkbox" checked={item.completed} readOnly />
+                                <span>{item.text}</span>
                             </div>
                         ))}
                     </div>
                 )}
-
-                <button className="btn btn-secondary" onClick={onClose}>
-                    Sluiten
-                </button>
             </div>
         </Modal>
     );

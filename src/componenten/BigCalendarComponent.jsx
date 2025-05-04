@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import format from 'date-fns/format';
@@ -10,14 +10,7 @@ import enUS from 'date-fns/locale/en-US';
 const locales = { 'en-US': enUS };
 const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
 
-const BigCalendarComponent = ({ view, date, events, onSelectEvent, onNavigate }) => {
-    const [localDate, setLocalDate] = useState(date || new Date());
-
-    const handleNavigate = (newDate) => {
-        setLocalDate(newDate);
-        if(onNavigate) onNavigate(newDate);
-    };
-
+const BigCalendarComponent = ({ events, view, date, onSelectEvent }) => {
     return (
         <div className="calendar-container">
             <Calendar
@@ -25,22 +18,15 @@ const BigCalendarComponent = ({ view, date, events, onSelectEvent, onNavigate })
                 events={events}
                 startAccessor="start"
                 endAccessor="end"
-                defaultView={view}
-                views={['month', 'week', 'day', 'agenda']}
-                date={localDate}
-                onNavigate={handleNavigate}
-                onSelectEvent={onSelectEvent}
                 style={{ height: 600 }}
+                views={['month', 'week', 'day', 'agenda']}
+                defaultView={view}
+                date={date}
+                onSelectEvent={onSelectEvent}
                 messages={{
-                    noEventsInRange: "Geen taken gevonden voor deze periode."
+                    noEventsInRange: "Geen taken gevonden"
                 }}
             />
-
-            {events.length === 0 && (
-                <div className="empty-calendar-hint">
-                    <p>🗓️ Klik op "+ Nieuwe Taak" om taken toe te voegen</p>
-                </div>
-            )}
         </div>
     );
 };

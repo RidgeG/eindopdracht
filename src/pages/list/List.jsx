@@ -1,48 +1,80 @@
-import React, { useEffect, useState, useContext } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import React from 'react';
 import { useTodoist } from '../../context/TodoistContext';
-import Loader from '../../componenten/Loader';
+
 
 const ListsPage = () => {
-    const { user } = useAuth();
     const { tasks } = useTodoist();
-    const [lists, setLists] = useState([]);
-    const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const userTasks = tasks.filter(task =>
-            task.userId === user?.uid &&
-            ["boodschappen", "huishouden"].includes(task.category)
-        );
-
-        const grouped = userTasks.reduce((acc, task) => {
-            const category = task.category;
-            if (!acc[category]) acc[category] = [];
-            acc[category].push(task);
-            return acc;
-        }, {});
-
-        setLists(Object.entries(grouped));
-        setLoading(false);
-    }, [tasks, user]);
+    const listCategories = ['boodschappen', 'huishouden'];
+    const calendarCategories = ['werk', 'prive'];
 
     return (
         <div className="page-container">
-            <h1>Mijn Lijsten</h1>
-            {loading ? <Loader /> : (
+            <h2>Lijsten</h2>
+
+            <section className="list-section">
+                <h3>Checklists</h3>
                 <div className="lists-grid">
-                    {lists.map(([category, items]) => (
-                        <div key={category} className="list-card">
-                            <h2>{category} ({items.length})</h2>
-                            <ul>
-                                {items.map(item => (
-                                    <li key={item.id}>{item.content || item.title}</li>
-                                ))}
-                            </ul>
-                        </div>
-                    ))}
+                    {listCategories.map((category) => {
+                        const categoryTasks = tasks.filter(t => t.category === category);
+                        return (
+                            <article key={category} className="list-card">
+                                <h4>{category.charAt(0).toUpperCase() + category.slice(1)}</h4>
+                                {categoryTasks.length > 0 ? (
+                                    <ul className="checklist">
+                                        {categoryTasks.flatMap(t =>
+                                            t.items?.map((item, i) => (
+                                                <li key={`${t.id}-${i}`} className="checklist-item">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={item.completed}
+                                                        readOnly
+                                                    />
+                                                    <span>{item}</span>
+                                                </li>
+                                            )) || []
+                                        )}
+                                    </ul>
+                                ) : (
+                                    <p className="empty-state">Geen items gevonden</p>
+                                )}
+                            </article>
+                        );
+                    })}
                 </div>
-            )}
+            </section>
+
+            <section className="calendar-section">
+                <h3>Kalender taken</h3>
+                <div className="calendar-categories">
+                    {calendarCategories.map((category) => {
+                        const categoryTasks = tasks.filter(t => t.category === category);
+                        return (
+                            <div key={category} className="category-block">
+                                <h4>{category.charAt(0).toUpperCase() + category.slice(1)}</h4>
+                                {categoryTasks.length > 0 ? (
+                                    <ul className="calendar-list">
+                                        {categoryTasks.map(task => (
+                                            <li key={task.id} className="calendar-item">
+                                                <div className="task-title">{task.title}</div>
+                                                <div className="task-date">
+                                                    {new Date(task.dueDate).toLocaleDateString('nl-NL', {
+                                                        weekday: 'short',
+                                                        day: 'numeric',
+                                                        month: 'short'
+                                                    })}
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="empty-state">Geen taken gevonden</p>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            </section>
         </div>
     );
 };

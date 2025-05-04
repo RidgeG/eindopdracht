@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
-import {jwtDecode} from 'jwt-decode';
-
-const API_BASE = '/api';
-const API_KEY = 'kalenderapp:0m01WGvb06SMv1D1T658';
+import { auth } from '../../firebaseConfig';
+import {
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    onAuthStateChanged,
+    signOut
+} from 'firebase/auth';
 
 export const AuthContext = createContext();
 
@@ -12,48 +14,31 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const token = localStorage.getItem('authToken');
-        if (token) {
-            try {
-                const decoded = jwtDecode(token);
-                setUser(decoded);
-            } catch (error) {
-                console.error('Token invalid:', error);
-                localStorage.removeItem('authToken');
-            }
-        }
-        setLoading(false);
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setUser(user);
+            setLoading(false);
+        });
+        return unsubscribe;
     }, []);
 
     const login = async (email, password) => {
         try {
-            const response = await axios.post(`${API_BASE}/users/login`, { email, password }, {
-                headers: { 'X-Api-Key': API_KEY }
-            });
-            localStorage.setItem('authToken', response.data.token);
-            setUser(jwtDecode(response.data.token));
-            return true;
+            await signInWithEmailAndPassword(auth, email, password);
         } catch (error) {
-            console.error('Login error:', error);
-            return false;
+            throw new Error(error.message);
         }
     };
 
     const register = async (email, password) => {
         try {
-            await axios.post(`${API_BASE}/users/register`, { email, password }, {
-                headers: { 'X-Api-Key': API_KEY }
-            });
-            return true;
+            await createUserWithEmailAndPassword(auth, email, password);
         } catch (error) {
-            console.error('Registration error:', error);
-            return false;
+            throw new Error(error.message);
         }
     };
 
     const logout = () => {
-        localStorage.removeItem('authToken');
-        setUser(null);
+        return signOut(auth);
     };
 
     return (

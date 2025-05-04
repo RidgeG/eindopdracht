@@ -7,35 +7,36 @@ export const TodoistProvider = ({ children }) => {
     const [isLinked, setIsLinked] = useState(false);
     const [tasks, setTasks] = useState([]);
 
-    useEffect(() => {
-        const linked = localStorage.getItem('todoistLinked') === 'true';
-        setIsLinked(linked);
-        if (!linked) {
-            const localTasks = JSON.parse(localStorage.getItem('localTasks') || '[]');
-            setTasks(localTasks);
-        }
-    }, []);
-
     const toggleStorage = () => {
         const newState = !isLinked;
         setIsLinked(newState);
-        localStorage.setItem('todoistLinked', newState.toString());
+        localStorage.setItem('todoistLinked', newState);
+        if (!newState) loadLocalTasks();
     };
+
+    const loadLocalTasks = () => {
+        const localTasks = JSON.parse(localStorage.getItem('localTasks') || []);
+        setTasks(localTasks);
+    };
+
 
     const getTasks = async () => {
         if (isLinked) {
             try {
                 const response = await fetch('https://api.todoist.com/rest/v2/tasks', {
-                    headers: { Authorization: `Bearer ${TODOIST_TOKEN}` }
+                    headers: {
+                        'Authorization': `Bearer ${TODOIST_TOKEN}`
+                    }
                 });
                 const data = await response.json();
                 setTasks(data);
-                return data;
             } catch (error) {
-                console.error('Todoist error:', error);
+                console.error('Todoist fout:', error);
             }
+        } else {
+            const localTasks = JSON.parse(localStorage.getItem('localTasks') || '[]');
+            setTasks(localTasks);
         }
-        return tasks;
     };
 
     const addTask = async (task) => {
@@ -45,15 +46,20 @@ export const TodoistProvider = ({ children }) => {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        Authorization: `Bearer ${TODOIST_TOKEN}`
+                        'Authorization': `Bearer ${TODOIST_TOKEN}`
                     },
-                    body: JSON.stringify(task)
+                    body: JSON.stringify({
+                        content: task.title,
+                        due_date: task.dueDate,
+                        description: task.category
+                    })
                 });
                 const newTask = await response.json();
                 setTasks(prev => [...prev, newTask]);
                 return newTask;
             } catch (error) {
-                console.error('Todoist error:', error);
+                console.error('Todoist fout:', error);
+                throw error;
             }
         } else {
             const newTask = {
@@ -69,7 +75,13 @@ export const TodoistProvider = ({ children }) => {
     };
 
     return (
-        <TodoistContext.Provider value={{ isLinked, tasks, toggleStorage, getTasks, addTask }}>
+        <TodoistContext.Provider value={{
+            isLinked,
+            tasks,
+            toggleStorage: () => setIsLinked(prev => !prev),
+            addTask,
+            getTasks
+        }}>
             {children}
         </TodoistContext.Provider>
     );
