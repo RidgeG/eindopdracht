@@ -1,87 +1,173 @@
 import React, { useState, useContext } from 'react';
-import { TodoistContext } from '../../context/TodoistContext';
-import { AuthContext } from '../../context/AuthContext';
-import { doc, setDoc } from 'firebase/firestore';
-import { db } from '../../../firebaseConfig';
+import { useAuth } from '../../context/AuthContext';
+import { useTodoist } from '../../context/TodoistContext';
 import InputField from '../../componenten/InputField';
-import { useNavigate } from 'react-router-dom';
 import Loader from '../../componenten/Loader';
 
 const NewTask = () => {
-    const { createTask, isLinked, isLoading } = useContext(TodoistContext);
-    const { user } = useContext(AuthContext);
-    const [taskData, setTaskData] = useState({ title: '', dueDate: '', description: '' });
-    const [message, setMessage] = useState('');
-    const navigate = useNavigate();
+    const { user } = useAuth();
+    const { isLinked, addTask } = useTodoist();
+    const [task, setTask] = useState({
+        title: '',
+        dueDate: '',
+        category: 'prive',
+        items: []
+    });
+    const [currentItem, setCurrentItem] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [feedback, setFeedback] = useState({ type: '', message: '' });
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        try {
-            // Validatie
-            if (!taskData.title.trim()) throw new Error('Taaknaam is verplicht');
-            if (!taskData.dueDate) throw new Error('Deadline is verplicht');
+        setLoading(true);
 
-            // Notificatie permissie check
-            if (Notification.permission !== "granted") {
-                await Notification.requestPermission();
-            }
-
-            // Opslaan taak
-            if (isLinked) {
-                await createTask({
-                    content: taskData.title,
-                    due: { datetime: taskData.dueDate },
-                    description: taskData.description
-                });
-            } else {
-                await setDoc(doc(db, 'localTasks', `${user.uid}_${Date.now()}`), {
-                    ...taskData,
-                    userId: user.uid,
-                    createdAt: new Date().toISOString()
-                });
-            }
-
-            // Notificatie
-            if (Notification.permission === "granted") {
-                new Notification("Taak aangemaakt", {
-                    body: `${taskData.title} - ${new Date(taskData.dueDate).toLocaleDateString()}`
-                });
-            }
-
-            navigate('/home');
-        } catch (error) {
-            setMessage(error.message);
-            console.error("Opslaan mislukt:", error);
+        if (!validateForm()) {
+            setLoading(false);
+            return;
         }
+
+        try {
+            const taskData = {
+                ...task,
+                userId: user?.uid,
+                createdAt: new Date().toISOString()
+            };
+
+            await addTask(taskData);
+            setFeedback({
+                type: 'success',
+                message: `Taak "${task.title}" opgeslagen in ${isLinked ? 'Todoist' : 'lokale opslag'}!`
+            });
+            resetForm();
+        } catch (error) {
+            setFeedback({
+                type: 'error',
+                message: `Fout: ${error.message}`
+            });
+        } finally {
+            setLoading(false);
+            setTimeout(() => setFeedback({ type: '', message: '' }), 3000);
+        }
+    };
+
+    const validateForm = () => {
+        if (!task.title.trim()) {
+            setFeedback({ type: 'error', message: 'Titel is verplicht' });
+            return false;
+        }
+
+        if (['werk', 'prive'].includes(task.category) && !task.dueDate) {
+            setFeedback({ type: 'error', message: 'Deadline is verplicht voor deze categorie' });
+            return false;
+        }
+
+        if (['boodschappen', 'huishouden'].includes(task.category) && task.items.length === 0) {
+            setFeedback({ type: 'error', message: 'Voeg minimaal 1 item toe' });
+            return false;
+        }
+        return true;
+    };
+
+    const resetForm = () => {
+        setTask({
+            title: '',
+            dueDate: '',
+            category: 'prive',
+            items: []
+        });
+        setCurrentItem('');
     };
 
     return (
         <div className="page-container">
-            <h2>Nieuwe Taak</h2>
-            <form onSubmit={handleSubmit}>
-                <InputField
-                    label="Taaknaam *"
-                    value={taskData.title}
-                    onChange={(e) => setTaskData({ ...taskData, title: e.target.value })}
-                />
-                <InputField
-                    type="datetime-local"
-                    label="Deadline *"
-                    value={taskData.dueDate}
-                    onChange={(e) => setTaskData({ ...taskData, dueDate: e.target.value })}
-                />
-                <div className="form-group">
-                    <label>Beschrijving</label>
-                    <textarea
-                        value={taskData.description}
-                        onChange={(e) => setTaskData({ ...taskData, description: e.target.value })}
+            <div className="form-card">
+                <h2>Nieuwe Taak {isLinked && <span className="todoist-badge">Todoist</span>}</h2>
+
+                {feedback.message && (
+                    <div className={`feedback-banner ${feedback.type}`}>
+                        {feedback.message}
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit}>
+                    <InputField
+                        label="Titel"
+                        value={task.title}
+                        onChange={(e) => setTask({ ...task, title: e.target.value })}
+                        required
                     />
-                </div>
-                <button type="submit" className="btn" disabled={isLoading}>
-                    {isLoading ? <Loader small /> : 'Opslaan'}
-                </button>
-                {message && <p className="error-message">{message}</p>}
-            </form>
+
+                    <div className="form-section">
+                        <label>Categorie</label>
+                        <div className="category-grid">
+                            {['boodschappen', 'huishouden', 'werk', 'prive'].map((category) => (
+                                <button
+                                    key={category}
+                                    type="button"
+                                    className={`category-btn ${task.category === category ? 'active' : ''} ${category}`}
+                                    onClick={() => setTask({ ...task, category })}
+                                >
+                                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {['boodschappen', 'huishouden'].includes(task.category) ? (
+                        <div className="form-section">
+                            <label>Items toevoegen</label>
+                            <div className="item-input-group">
+                                <input
+                                    type="text"
+                                    value={currentItem}
+                                    onChange={(e) => setCurrentItem(e.target.value)}
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter' && currentItem.trim()) {
+                                            setTask({ ...task, items: [...task.items, currentItem.trim()] });
+                                            setCurrentItem('');
+                                        }
+                                    }}
+                                    placeholder="Voeg item toe (Enter om toe te voegen)"
+                                />
+                                <div className="item-list">
+                                    {task.items.map((item, index) => (
+                                        <div key={index} className="item">
+                                            <span>{item}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => setTask({
+                                                    ...task,
+                                                    items: task.items.filter((_, i) => i !== index)
+                                                })}
+                                            >
+                                                &times;
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="form-section">
+                            <InputField
+                                type="datetime-local"
+                                label="Deadline"
+                                value={task.dueDate}
+                                onChange={(e) => setTask({ ...task, dueDate: e.target.value })}
+                                required
+                            />
+                        </div>
+                    )}
+
+                    <button
+                        type="submit"
+                        className="btn-primary"
+                        disabled={loading}
+                    >
+                        {loading ? <Loader small /> : 'Taak Opslaan'}
+                    </button>
+                </form>
+            </div>
         </div>
     );
 };

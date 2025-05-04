@@ -7,32 +7,25 @@ import startOfWeek from 'date-fns/startOfWeek';
 import getDay from 'date-fns/getDay';
 import enUS from 'date-fns/locale/en-US';
 
-const locales = {
-    'en-US': enUS,
-};
+const locales = { 'en-US': enUS };
+const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
 
-const localizer = dateFnsLocalizer({
-    format,
-    parse,
-    startOfWeek,
-    getDay,
-    locales,
-});
-
-const BigCalendarComponent = ({ view, date, events, onSelectEvent, onNavigate }) => {
+const BigCalendarComponent = ({ events, view, date, onSelectEvent }) => {
     return (
-        <div>
+        <div className="calendar-container">
             <Calendar
                 localizer={localizer}
                 events={events}
                 startAccessor="start"
                 endAccessor="end"
-                defaultView={view}
+                style={{ height: 600 }}
                 views={['month', 'week', 'day', 'agenda']}
+                defaultView={view}
                 date={date}
-                onNavigate={onNavigate}
                 onSelectEvent={onSelectEvent}
-                style={{ height: 500 }}
+                messages={{
+                    noEventsInRange: "Geen taken gevonden"
+                }}
             />
         </div>
     );

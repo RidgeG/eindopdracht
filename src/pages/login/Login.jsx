@@ -1,47 +1,73 @@
-import React, { useState, useContext,  } from "react";
-import { AuthContext } from "../../context/AuthContext.jsx";
-import { Link, useNavigate } from "react-router-dom";
-import InputField from "../../componenten/InputField.jsx";
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import InputField from '../../componenten/InputField';
 
 const Login = () => {
-    const { login } = useContext(AuthContext);
+    const { login } = useAuth();
     const navigate = useNavigate();
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [message, setMessage] = useState("");
+    const [formData, setFormData] = useState({
+        email: '',
+        password: ''
+    });
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    async function handleSubmit(e) {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
+        setError('');
+
         try {
-            await login(email, password);
-            setMessage("Login succesvol");
-            navigate("/home");
+            await login(formData.email, formData.password);
+            navigate('/home');
         } catch (error) {
-            console.error("Inloggen mislukt:", error);
-            setMessage("Inloggen mislukt: " + error.message);
+            setError('Ongeldige inloggegevens');
+        } finally {
+            setLoading(false);
         }
-    }
+    };
 
     return (
-        <div className="form-container">
-            <h2>Inloggen</h2>
-            <form onSubmit={handleSubmit}>
-                <InputField
-                    type="email"
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                />
-                <InputField
-                    type="password"
-                    placeholder="Wachtwoord"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                />
-                <button type="submit" className="btn">Inloggen</button>
-            </form>
-            <p className="message">{message}</p>
-            <p>Heb je nog geen account? <Link to="/register">Registreer hier</Link></p>
+        <div className="auth-container">
+            <div className="auth-card">
+                <h2>Inloggen</h2>
+                <form onSubmit={handleSubmit}>
+                    <InputField
+                        type="email"
+                        label="E-mailadres"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        required
+                    />
+                    <InputField
+                        type="password"
+                        label="Wachtwoord"
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        required
+                    />
+
+                    {error && <div className="error-message">{error}</div>}
+
+                    <button
+                        type="submit"
+                        className="btn btn-primary"
+                        disabled={loading}
+                    >
+                        {loading ? 'Bezig...' : 'Inloggen'}
+                    </button>
+                </form>
+
+                <div className="auth-footer">
+                    <p>
+                        Nog geen account?{' '}
+                        <Link to="/register" className="auth-link">
+                            Registreer hier
+                        </Link>
+                    </p>
+                </div>
+            </div>
         </div>
     );
 };

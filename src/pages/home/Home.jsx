@@ -1,79 +1,49 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { useTodoist } from '../../context/TodoistContext';
 import BigCalendarComponent from '../../componenten/BigCalendarComponent';
-import { TodoistContext } from '../../context/TodoistContext';
-import { AuthContext } from '../../context/AuthContext';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../../../firebaseConfig';
 import Loader from '../../componenten/Loader';
-import { Link } from 'react-router-dom';
 
 const Home = () => {
-    const [date, setDate] = useState(new Date());
-    const { tasks, isLinked, fetchTasks } = useContext(TodoistContext);
-    const { user } = useContext(AuthContext);
-    const [localTasks, setLocalTasks] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const { user } = useAuth();
+    const { tasks } = useTodoist();
+    const [isInitialized, setIsInitialized] = useState(false);
+
+
+    const todayTasks = tasks.filter(task => {
+        const taskDate = new Date(task.dueDate || task.createdAt);
+        return taskDate.toDateString() === new Date().toDateString();
+    });
+
 
     useEffect(() => {
-        const fetchLocalTasks = async () => {
-            try {
-                const q = query(
-                    collection(db, "localTasks"),
-                    where("userId", "==", user.uid),
-                    where("dueDate", ">=", new Date().toISOString())
-                );
-                const querySnapshot = await getDocs(q);
-                setLocalTasks(querySnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data(),
-                    due: { datetime: doc.data().dueDate }
-                })));
-            } catch (error) {
-                console.error("Fout bij ophalen taken:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (isLinked) {
-            fetchTasks().finally(() => setLoading(false));
-        } else {
-            fetchLocalTasks();
+        if (tasks.length > 0 && !isInitialized) {
+            setIsInitialized(true);
         }
-    }, [isLinked, user.uid, fetchTasks]);
-
-    const events = (isLinked ? tasks : localTasks)
-        .filter(task => task?.due?.datetime)
-        .map(task => ({
-            id: task.id,
-            title: task.content || task.title,
-            start: new Date(task.due.datetime),
-            end: new Date(task.due.datetime)
-        }));
+    }, [tasks, isInitialized]);
 
     return (
-        <div className="page-container">
-            <h2>Vandaag</h2>
-            {loading ? (
-                <Loader />
-            ) : (
-                <>
-                    {!isLinked && (
-                        <div className="info-banner">
-                            <p>
-                                Gebruikt lokale opslag.
-                                <Link to="/profile"> Koppel Todoist</Link> voor synchronisatie.
-                            </p>
-                        </div>
-                    )}
-                    <BigCalendarComponent
-                        view="day"
-                        date={date}
-                        events={events}
-                        onNavigate={setDate}
-                    />
-                </>
-            )}
+        <div className="home-container">
+            <h2>Welkom {user?.email}</h2>
+            <h3>Taken voor vandaag</h3>
+
+            <div className="auto-fetch-container">
+                {!isInitialized && (
+                    <div className="loading-overlay">
+                        <Loader />
+                    </div>
+                )}
+
+                <BigCalendarComponent
+                    view="day"
+                    events={todayTasks.map(task => ({
+                        title: task.title,
+                        start: new Date(task.dueDate || task.createdAt),
+                        end: new Date(task.dueDate || task.createdAt),
+                        className: task.category
+                    }))}
+                />
+            </div>
         </div>
     );
 };

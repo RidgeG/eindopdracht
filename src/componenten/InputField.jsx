@@ -1,15 +1,18 @@
-import React from "react";
+import React from 'react';
 
-function InputField({ type, placeholder, value, onChange }) {
+const InputField = ({ type, label, value, onChange, required }) => {
     return (
-        <input
-            className="input-field"
-            type={type}
-            placeholder={placeholder}
-            value={value}
-            onChange={onChange}
-        />
+        <div className="input-group">
+            <label>{label}</label>
+            <input
+                type={type}
+                value={value}
+                onChange={onChange}
+                required={required}
+                className="input-field"
+            />
+        </div>
     );
-}
+};
 
 export default InputField;

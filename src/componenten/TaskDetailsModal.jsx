@@ -1,22 +1,25 @@
-import React from "react";
-import Modal from "./Modal";
+import React from 'react';
+import Modal from './Modal';
 
 const TaskDetailsModal = ({ task, onClose }) => {
     if (!task) return null;
 
     return (
-        <Modal isOpen={!!task} onClose={onClose}>
+        <Modal isOpen={true} onClose={onClose}>
             <div className="task-details">
                 <h3>{task.title}</h3>
-                <p>
-                    <strong>Start:</strong> {new Date(task.start).toLocaleString()}
-                </p>
-                <p>
-                    <strong>Eind:</strong> {new Date(task.end).toLocaleString()}
-                </p>
-                <p>
-                    <strong>Beschrijving:</strong> {task.description || "Geen beschrijving"}
-                </p>
+                <p><strong>Deadline:</strong> {new Date(task.dueDate).toLocaleString()}</p>
+                {task.checklist?.length > 0 && (
+                    <div className="checklist">
+                        <h4>Checklist:</h4>
+                        {task.checklist.map((item, index) => (
+                            <div key={index} className="checklist-item">
+                                <input type="checkbox" checked={item.completed} readOnly />
+                                <span>{item.text}</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </Modal>
     );

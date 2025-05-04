@@ -1,77 +1,51 @@
-import React, { createContext, useState, useEffect, useRef } from "react";
-import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
-import { auth, db } from "../../firebaseConfig";
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { auth } from '../../firebaseConfig';
+import {
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    onAuthStateChanged,
+    signOut
+} from 'firebase/auth';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const inactivityTimerRef = useRef(null);
+    const [loading, setLoading] = useState(true);
 
-    // Automatic logout na 2 uur inactiviteit
-    const resetInactivityTimer = () => {
-        if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
-        inactivityTimerRef.current = setTimeout(async () => {
-            try {
-                if (user) {
-                    await signOut(auth);
-                    setUser(null);
-                }
-            } catch (error) {
-                console.error("Automatisch uitloggen mislukt:", error);
-            }
-        }, 7200000); // 2 uur in ms
-    };
-
-    // Voeg activity listeners toe
     useEffect(() => {
-        if (!user) return;
-
-        const activities = ['mousemove', 'keydown', 'click'];
-        const resetTimer = () => resetInactivityTimer();
-
-        activities.forEach(event => window.addEventListener(event, resetTimer));
-        return () => activities.forEach(event => window.removeEventListener(event, resetTimer));
-    }, [user]);
-
-    // Auth state observer
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-            setUser(currentUser);
-            if (currentUser) resetInactivityTimer();
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setUser(user);
+            setLoading(false);
         });
         return unsubscribe;
     }, []);
 
-    // Google Login handler
-    const login = async () => {
-        const provider = new GoogleAuthProvider();
+    const login = async (email, password) => {
         try {
-            const result = await signInWithPopup(auth, provider);
-            setUser(result.user);
-            return { success: true };
+            await signInWithEmailAndPassword(auth, email, password);
         } catch (error) {
-            console.error("Login error:", error);
-            return { success: false, message: error.message };
+            throw new Error(error.message);
         }
     };
 
-    // Logout handler
-    const logout = async () => {
+    const register = async (email, password) => {
         try {
-            await signOut(auth);
-            setUser(null);
-            return { success: true };
+            await createUserWithEmailAndPassword(auth, email, password);
         } catch (error) {
-            console.error("Logout error:", error);
-            return { success: false, message: error.message };
+            throw new Error(error.message);
         }
+    };
+
+    const logout = () => {
+        return signOut(auth);
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout }}>
+        <AuthContext.Provider value={{ user, loading, login, register, logout }}>
             {children}
         </AuthContext.Provider>
     );
 };
+
+export const useAuth = () => useContext(AuthContext);
