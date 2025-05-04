@@ -1,23 +1,16 @@
-// main.jsx
-import { StrictMode } from 'react';
+import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter as Router } from 'react-router-dom';
-import './index.css';
-import App from './App.jsx';
-import { AuthProvider } from './context/AuthContext.jsx';
-import { ThemeContextProvider } from './context/ThemeContext.jsx';
-import { TodoistProvider } from './context/TodoistContext.jsx';
+import { BrowserRouter } from 'react-router-dom';
+import App from './App';
+import { AuthProvider } from './context/AuthContext';
+import { TodoistProvider } from './context/TodoistContext';
 
 createRoot(document.getElementById('root')).render(
-    <StrictMode>
-        <AuthProvider>
-            <ThemeContextProvider>
-                <TodoistProvider>
-                    <Router>
-                        <App />
-                    </Router>
-                </TodoistProvider>
-            </ThemeContextProvider>
-        </AuthProvider>
-    </StrictMode>
+    <AuthProvider>
+        <TodoistProvider>
+            <BrowserRouter>
+                <App />
+            </BrowserRouter>
+        </TodoistProvider>
+    </AuthProvider>
 );

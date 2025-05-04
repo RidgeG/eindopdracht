@@ -1,61 +1,39 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { TodoistContext } from '../../context/TodoistContext';
-import { AuthContext } from '../../context/AuthContext';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../../../firebaseConfig';
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { useTodoist } from '../../context/TodoistContext';
 import BigCalendarComponent from '../../componenten/BigCalendarComponent';
 import Loader from '../../componenten/Loader';
 
 const Home = () => {
-    const [date, setDate] = useState(new Date());
-    const { tasks, isLinked, fetchTasks } = useContext(TodoistContext);
-    const { user } = useContext(AuthContext);
-    const [localTasks, setLocalTasks] = useState([]);
+    const { user } = useAuth();
+    const { tasks, getTasks } = useTodoist();
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const loadData = async () => {
-            try {
-                if (isLinked) {
-                    await fetchTasks();
-                } else {
-                    const q = query(
-                        collection(db, "localTasks"),
-                        where("userId", "==", user.uid)
-                    );
-                    const snapshot = await getDocs(q);
-                    setLocalTasks(snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data(),
-                        start: new Date(doc.data().dueDate),
-                        end: new Date(doc.data().dueDate)
-                    })));
-                }
-            } finally {
-                setLoading(false);
-            }
+        const loadTasks = async () => {
+            await getTasks();
+            setLoading(false);
         };
-        loadData();
-    }, [isLinked, user?.uid]);
+        loadTasks();
+    }, [getTasks]);
 
-    const events = (isLinked ? tasks : localTasks).map(task => ({
-        id: task.id,
-        title: task.content || task.title,
-        start: task.start || new Date(task.due?.datetime || task.dueDate),
-        end: task.end || new Date(task.due?.datetime || task.dueDate)
-    }));
+    const todayTasks = tasks.filter(task => {
+        const taskDate = new Date(task.due?.date || task.createdAt);
+        return taskDate.toDateString() === new Date().toDateString();
+    });
 
     return (
         <div className="page-container">
-            <h2>Vandaag</h2>
-            {loading ? (
-                <Loader />
-            ) : (
+            <h2>Welkom {user?.email}</h2>
+            <h3>Vandaag</h3>
+            {loading ? <Loader /> : (
                 <BigCalendarComponent
                     view="day"
-                    date={date}
-                    events={events}
-                    onNavigate={setDate}
+                    events={todayTasks.map(task => ({
+                        title: task.content || task.title,
+                        start: new Date(task.due?.date || task.createdAt),
+                        end: new Date(task.due?.date || task.createdAt)
+                    }))}
                 />
             )}
         </div>

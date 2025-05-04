@@ -1,23 +1,24 @@
 {
-  "emulators": {
-    "auth": { "port": 9099, "host": "localhost" },
-    "firestore": { "port": 8080, "host": "localhost" },
-    "functions": { "port": 5001, "host": "localhost" },
-    "ui": { "enabled": true, "port": 4000 }
-  },
-  "functions": {
-    "source": "functions",
-    "runtime": "nodejs22",
-    "ignore": ["node_modules", ".git", "firebase-debug.log"]
-  },
   "hosting": {
-    "public": "dist",
+    "public": "public",
     "rewrites": [
       {
         "source": "/todoist-oauth-callback",
         "function": "exchangeToken"
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
       }
     ],
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  },
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs22"
   }
 }

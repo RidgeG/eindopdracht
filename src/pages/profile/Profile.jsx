@@ -1,18 +1,20 @@
 import React, { useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../../context/AuthContext';
-import ProfilePage from '../../componenten/ProfilePage';
+import { useTodoist } from '../../context/TodoistContext';
 
-const Profile = () => {
-    const { logout } = useContext(AuthContext);
-    const navigate = useNavigate();
+const ProfilePage = () => {
+    const { isLinked, toggleStorage } = useTodoist();
 
-    const handleLogout = () => {
-        logout();
-        navigate('/login');
-    };
-
-    return <ProfilePage onLogout={handleLogout} />;
+    return (
+        <div className="page-container">
+            <h1>Profielinstellingen</h1>
+            <div className="storage-toggle">
+                <p>Huidige opslag: {isLinked ? 'Todoist' : 'Lokaal'}</p>
+                <button onClick={toggleStorage} className="btn btn-secondary">
+                    Schakel naar {isLinked ? 'Lokaal' : 'Todoist'}
+                </button>
+            </div>
+        </div>
+    );
 };
 
-export default Profile;
+export default ProfilePage;

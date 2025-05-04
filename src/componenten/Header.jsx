@@ -18,8 +18,9 @@ const Header = () => {
                     <ul className="nav-list">
                         <li><button onClick={() => navigate("/home")}>Home</button></li>
                         <li><button onClick={() => navigate("/alltasks")}>Overzicht</button></li>
-                        <li><button onClick={() => navigate("/upcomingtasks")}>Aankomend</button></li>
+                        <li><button onClick={() => navigate("/lists")}>Lijsten</button></li>
                         <li><button onClick={() => navigate("/newtask")}>Nieuwe Taak</button></li>
+                        <li><button onClick={()=>navigate("/upcomming")}>Aankomede Taken</button></li>
                         {user && (
                             <>
                                 <li><button onClick={() => navigate("/profile")}>Profiel</button></li>
@@ -28,11 +29,7 @@ const Header = () => {
                         )}
                     </ul>
                 </nav>
-                <button
-                    onClick={toggleTheme}
-                    className="theme-toggle-btn"
-                    aria-label="Thema wisselen"
-                >
+                <button onClick={toggleTheme} className="theme-toggle-btn">
                     {theme === 'light' ? '🌙' : '☀️'}
                 </button>
             </div>

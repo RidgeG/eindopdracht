@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import format from 'date-fns/format';
@@ -11,25 +11,12 @@ const locales = { 'en-US': enUS };
 const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
 
 const BigCalendarComponent = ({ view, date, events, onSelectEvent, onNavigate }) => {
-    const eventStyleGetter = (event) => {
-        let backgroundColor = '#4f46e5';
-        if (event.category === 'werk') backgroundColor = '#ef4444';
-        if (event.category === 'boodschappen') backgroundColor = '#10b981';
-        if (event.category === 'huishouden') backgroundColor = '#f59e0b';
+    const [localDate, setLocalDate] = useState(date || new Date());
 
-        return { style: { backgroundColor } };
+    const handleNavigate = (newDate) => {
+        setLocalDate(newDate);
+        if(onNavigate) onNavigate(newDate);
     };
-
-    const CustomEvent = ({ event }) => (
-        <div>
-            <strong>{event.title}</strong>
-            {event.category === 'werk' && (
-                <div style={{ fontSize: '0.8em' }}>
-                    {format(new Date(event.reminderDate), 'dd/MM HH:mm')}
-                </div>
-            )}
-        </div>
-    );
 
     return (
         <div className="calendar-container">
@@ -40,12 +27,10 @@ const BigCalendarComponent = ({ view, date, events, onSelectEvent, onNavigate })
                 endAccessor="end"
                 defaultView={view}
                 views={['month', 'week', 'day', 'agenda']}
-                date={date}
-                onNavigate={onNavigate}
+                date={localDate}
+                onNavigate={handleNavigate}
                 onSelectEvent={onSelectEvent}
                 style={{ height: 600 }}
-                eventPropGetter={eventStyleGetter}
-                components={{ event: CustomEvent }}
                 messages={{
                     noEventsInRange: "Geen taken gevonden voor deze periode."
                 }}

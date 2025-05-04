@@ -9,9 +9,10 @@ import Profile from './pages/Profile/Profile';
 import UpcomingTasks from './pages/upcomingTask/UpcomingTask.jsx';
 import Login from './pages/Login/Login';
 import Register from './pages/Register/Register';
-import TodoistOAuthCallback from './pages/TodoistOAuthCallback/TodoistOAuthCallback';
 import ProtectedRoute from './componenten/ProtectedRoute';
+import ListsPage from "./pages/list/List.jsx";
 import './App.css';
+
 
 function App() {
     return (
@@ -22,13 +23,14 @@ function App() {
                     <Route path="/" element={<Navigate to="/login" replace />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
-                    <Route path="/todoist-oauth-callback" element={<TodoistOAuthCallback />} />
 
+                    {/* Protected routes */}
                     <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
                     <Route path="/alltasks" element={<ProtectedRoute><AllTasks /></ProtectedRoute>} />
                     <Route path="/upcomingtasks" element={<ProtectedRoute><UpcomingTasks /></ProtectedRoute>} />
                     <Route path="/newtask" element={<ProtectedRoute><NewTask /></ProtectedRoute>} />
                     <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                    <Route path="/lists" element={<ProtectedRoute><ListsPage /></ProtectedRoute>} />
 
                     <Route path="*" element={<Navigate to="/home" replace />} />
                 </Routes>
